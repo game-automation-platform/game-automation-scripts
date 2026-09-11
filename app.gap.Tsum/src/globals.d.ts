@@ -654,11 +654,21 @@ interface Forecast {
 // --- Board / pathfinding shapes ---
 
 /**
- * One tsum found by `findTsums`: position and radius in the play-square capture
- * space, plus the sampled colour. The image is HSV by the time it is sampled,
- * so b/g/r hold H/S/V.
+ * What a tsum's face looks like in grey, read off the board gray inside the
+ * circle: the spread of the samples and the brightest one. Only ever compared
+ * between two near-grey colours -- see `distance3D` in `src/pathfinding.ts`.
  */
-interface TsumPoint {
+interface TsumTexture {
+  contrast: number;
+  peak: number;
+}
+
+/**
+ * One tsum found by `findTsums`: position and radius in the play-square capture
+ * space, plus the sampled colour as the chroma feature `chromaFeature` makes of
+ * the HSV read (b/g/r hold that feature's three axes), and its texture.
+ */
+interface TsumPoint extends TsumTexture {
   x: number;
   y: number;
   z: number;
@@ -668,10 +678,12 @@ interface TsumPoint {
 }
 
 /** One colour cluster from `classifyTsums`: a running mean plus its members. */
-interface TsumCluster {
+interface TsumCluster extends TsumTexture {
   sumb: number;
   sumg: number;
   sumr: number;
+  sumContrast: number;
+  sumPeak: number;
   b: number;
   g: number;
   r: number;

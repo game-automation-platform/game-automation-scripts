@@ -282,8 +282,10 @@ Tsum.prototype.scanBoardQuick = function() {
           for (let cj = 0; cj < ci; cj++) {
             distances.push(Math.round(distance3D(tcs[ci], tcs[cj])));
           }
-          // h/s/v, which is how a cluster centre is read; `distances` stay on
-          // the chroma plane, which is what the merge threshold measures.
+          // h/s/v, which is how a cluster centre is read; `distances` are
+          // `distance3D`'s own, which is what the merge threshold measures --
+          // texture axes included between two greys, hence the two texture
+          // means beside them.
           const hsv = chromaToHsv({b: tcs[ci].b, g: tcs[ci].g, r: tcs[ci].r});
           out.push({
             cluster: ci,
@@ -291,6 +293,8 @@ Tsum.prototype.scanBoardQuick = function() {
             h: Math.round(hsv.b),
             s: Math.round(hsv.g),
             v: Math.round(hsv.r),
+            contrast: Math.round(tcs[ci].contrast),
+            peak: Math.round(tcs[ci].peak),
             distances: distances,
           });
         }

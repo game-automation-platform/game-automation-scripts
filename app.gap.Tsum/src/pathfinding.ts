@@ -517,7 +517,8 @@ function findTsumCount(grayImg: NativeImage): number {
  * The old HSV outRange masks filtered blue tsums out before detection, so their
  * circles were never found and blue chains went unplayed. Grayscale is
  * colour-agnostic: it detects every tsum, and colour is then sampled from the
- * HSV image and clustered separately in classifyTsums.
+ * HSV image and clustered separately in classifyTsums. The same gray is read a
+ * second time for each tsum's texture -- see the texture axes below.
  */
 function findTsums(img: NativeImage, grayImg: NativeImage): TsumPoint[] {
   // Every native image allocated here must be released even when a native
@@ -576,6 +577,8 @@ function findTsums(img: NativeImage, grayImg: NativeImage): TsumPoint[] {
       pts.push({x: p.x, y: p.y + 1 < Config.screenResize ? p.y + 1 : p.y});
     }
     const samples = pts.length > 0 ? getImageColors(hsvImg, pts) : [];
+    // The texture read, off the gray the Hough pass already has.
+    const textures = readTextures(grayImg, points);
 
     const results: TsumPoint[] = [];
     for (let k = 0; k < points.length; k++) {
@@ -596,7 +599,8 @@ function findTsums(img: NativeImage, grayImg: NativeImage): TsumPoint[] {
         // -- see `HoughCircle`. This read `p.r`, so `z` was `undefined` on
         // every tsum; nothing reads it, which is why nothing noticed.
         x: p.x, y: p.y, z: p.radius,
-        b: c.b, g: c.g, r: c.r
+        b: c.b, g: c.g, r: c.r,
+        contrast: textures[k].contrast, peak: textures[k].peak,
       });
     }
 
@@ -654,6 +658,118 @@ const ChromaValueWeight = 0.5;
 // higher rows are worth having only if live play says those cost little.
 const ChromaMergeDistance = 40;
 
+// --- the texture axes -------------------------------------------------------
+//
+// What the chroma plane cannot do is tell two greys apart. A silver helmet, a
+// black-and-white rabbit and a black-and-white dog all blur to a colour of
+// chroma radius 7-19 -- the origin of the plane -- and differ only in value,
+// at half weight: the Mandalorian, Oswald and Goofy read 22, 33 and 54 apart
+// by `distance3D`, so the first two always merge and the third often joins
+// them. 117 of the library's 765 tsums sit below saturation 60, where hue means
+// nothing, so any roster holding two of them is exposed the same way.
+//
+// What does tell them apart is the picture inside the circle, in grey: how
+// much it varies (a white face against black ears, or an even silver) and how
+// bright it gets (a white face reaches ~250, silver ~220, the dog's muzzle
+// ~230). Both are read off the board gray the Hough pass already built, from
+// `TextureDisc` -- 57 points on four rings inside the head -- and carried on
+// the point as `contrast` and `peak`. Measured over composite piles of the
+// game's own board art: the contrast reads 36 / 62 / 52 for those three at a
+// spread of 3-5, the peak 220 / 250 / 229 at a spread of 1-2; on real captures
+// a pure grey cluster spreads 4-9 on the contrast and 4-7 on the peak, twice
+// that under a fever or last-seconds tint. At weight 2 apiece the helmet sits
+// 80 from the rabbit and the rabbit 46 from the dog; the helmet is 38 from the
+// dog, still inside the merge distance, and that pair is the residual.
+//
+// GATED, not simply added. Sampled over every board in the corpus at these
+// weights, a saturated tsum's texture varies with its tilt and its neighbours
+// enough to split a real cluster in half, and a saturated colour never needed
+// the help. So the axes count in full only between two samples both under a
+// chroma radius of `TextureGateFull`, fade to nothing by `TextureGateOff`, and
+// a chromatic tsum's distance is exactly what it was. Over the twenty-one
+// in-round captures this changes four: two merges it undoes (a white Buzz from
+// a grey elephant, a black-and-white face from Donald) and two where one tsum
+// moves. On composite piles of the roster above the play loop's refused drags
+// go from 26% to 4% at the default chain cap of 3, 35% to 13% at 5. On six
+// phone captures of Mandalorian boards -- beside Oswald, a penguin, Mickey and
+// Baymax, two of them in fever -- the plain distance merged the helmet with
+// the black-and-white tsum on every one (20-33 of ~40 circles in one cluster);
+// with the axes the helmet's cluster is pure on all six, and what remains
+// merged is two black-and-white tsums on one board (Goofy with Oswald, Goofy
+// with Mickey). A colour carrying no texture -- a library colour, a palette
+// entry, the studio's synthetic points -- gets the plain distance.
+const TextureContrastWeight = 2;
+const TexturePeakWeight = 2;
+/** Chroma radius at and below which the texture axes count in full. */
+const TextureGateFull = 20;
+/** Chroma radius at and above which they are ignored. */
+const TextureGateOff = 35;
+/**
+ * Where the gray is read inside a circle, as offsets from its centre: the
+ * centre and rings of 8, 12, 16 and 20 points at radii 3, 6, 8 and 10, all
+ * inside a head of radius ~12. Denser than the colour cross because these are
+ * distribution statistics: on 21 points the helmet and the rabbit sit a third
+ * closer in contrast for the same spread.
+ */
+const TextureDisc: Point[] = (function() {
+  const disc: Point[] = [{x: 0, y: 0}];
+  const rings = [[3, 8], [6, 12], [8, 16], [10, 20]];
+  for (let r = 0; r < rings.length; r++) {
+    const radius = rings[r][0], count = rings[r][1];
+    for (let k = 0; k < count; k++) {
+      const a = 2 * Math.PI * k / count;
+      disc.push({x: Math.round(radius * Math.cos(a)), y: Math.round(radius * Math.sin(a))});
+    }
+  }
+  return disc;
+})();
+
+/**
+ * Each circle's texture: `TextureDisc` read off the board gray in one batched
+ * crossing, then the population spread and the brightest sample. A point off
+ * the square is clamped onto it, the cross's own edge rule. `grayImg` is one
+ * channel, which the native reports as r = g = b.
+ */
+function readTextures(grayImg: NativeImage, circles: Point[]): TsumTexture[] {
+  const DiscPoints = TextureDisc.length;
+  const edge = Config.screenResize - 1;
+  const pts: Point[] = [];
+  for (let k = 0; k < circles.length; k++) {
+    const p = circles[k];
+    for (let d = 0; d < DiscPoints; d++) {
+      const x = p.x + TextureDisc[d].x;
+      const y = p.y + TextureDisc[d].y;
+      pts.push({
+        x: x < 0 ? 0 : (x > edge ? edge : x),
+        y: y < 0 ? 0 : (y > edge ? edge : y),
+      });
+    }
+  }
+  const grays = pts.length > 0 ? getImageColors(grayImg, pts) : [];
+  const out: TsumTexture[] = [];
+  for (let k = 0; k < circles.length; k++) {
+    const base = k * DiscPoints;
+    let sum = 0, sumSq = 0, peak = 0;
+    for (let d = 0; d < DiscPoints; d++) {
+      const v = grays[base + d].r;
+      sum += v; sumSq += v * v;
+      if (v > peak) { peak = v; }
+    }
+    const mean = sum / DiscPoints;
+    const variance = sumSq / DiscPoints - mean * mean;
+    out.push({ contrast: variance > 0 ? Math.sqrt(variance) : 0, peak: peak });
+  }
+  return out;
+}
+
+/** How much of the texture axes a colour this far from grey gets: 1 down to 0. */
+function textureGate(c: Color): number {
+  const radius = Math.sqrt(c.b * c.b + c.g * c.g);
+  if (radius <= TextureGateFull) { return 1; }
+  if (radius >= TextureGateOff) { return 0; }
+  return (TextureGateOff - radius) / (TextureGateOff - TextureGateFull);
+}
+
 /** An HSV sample as the board model clusters it. */
 function chromaFeature(hsv: Color): Color {
   // OpenCV packs hue as degrees/2 into 0..179, so the angle is 2h degrees.
@@ -682,9 +798,22 @@ function chromaToHsv(c: Color): Color {
 // Euclidean space. The HSV model this replaced needed three rebates on top of
 // the same formula -- near hues, near saturations, and a dark pair -- and each
 // of them was patching a pathology the plane does not have.
-function distance3D(p1: Color, p2: Color): number {
+//
+// Plus the texture axes, when both sides carry them and both are near grey --
+// the block above `TextureContrastWeight` is the reasoning.
+function distance3D(p1: Color & Partial<TsumTexture>, p2: Color & Partial<TsumTexture>): number {
   const db = p1.b - p2.b, dg = p1.g - p2.g, dr = p1.r - p2.r;
-  return Math.sqrt(db * db + dg * dg + dr * dr);
+  let d2 = db * db + dg * dg + dr * dr;
+  if (p1.contrast !== undefined && p1.peak !== undefined
+      && p2.contrast !== undefined && p2.peak !== undefined) {
+    const gate = textureGate(p1) * textureGate(p2);
+    if (gate > 0) {
+      const dc = TextureContrastWeight * (p1.contrast - p2.contrast);
+      const dp = TexturePeakWeight * (p1.peak - p2.peak);
+      d2 += gate * (dc * dc + dp * dp);
+    }
+  }
+  return Math.sqrt(d2);
 }
 
 // Greedy single pass against a drifting running mean, fixed merge threshold,
@@ -703,6 +832,11 @@ function classifyTsums(points: TsumPoint[]): TsumCluster[] {
 
   for (let i = 0; i < points.length; i++) {
     const p = points[i];
+    // A point with no texture read -- the development tools' Board Studio feeds
+    // colour-only points -- clusters on colour alone; zero here keeps the
+    // running means finite and `distance3D` skips the axes for it anyway.
+    const contrast = p.contrast !== undefined ? p.contrast : 0;
+    const peak = p.peak !== undefined ? p.peak : 0;
     let bestCluster: TsumCluster | null = null;
     let minDistance = Infinity;
 
@@ -717,15 +851,21 @@ function classifyTsums(points: TsumPoint[]): TsumCluster[] {
     }
 
     if (bestCluster) {
-      // Add to the nearest cluster and update its running mean colour.
+      // Add to the nearest cluster and update its running means.
       bestCluster.points.push(p);
       const count = bestCluster.points.length;
       bestCluster.sumb += p.b; bestCluster.sumg += p.g; bestCluster.sumr += p.r;
+      bestCluster.sumContrast += contrast; bestCluster.sumPeak += peak;
       bestCluster.b = bestCluster.sumb / count;
       bestCluster.g = bestCluster.sumg / count;
       bestCluster.r = bestCluster.sumr / count;
+      bestCluster.contrast = bestCluster.sumContrast / count;
+      bestCluster.peak = bestCluster.sumPeak / count;
     } else {
-      clusters.push({ sumb: p.b, sumg: p.g, sumr: p.r, b: p.b, g: p.g, r: p.r, points: [p] });
+      clusters.push({
+        sumb: p.b, sumg: p.g, sumr: p.r, sumContrast: contrast, sumPeak: peak,
+        b: p.b, g: p.g, r: p.r, contrast: contrast, peak: peak, points: [p],
+      });
     }
   }
 

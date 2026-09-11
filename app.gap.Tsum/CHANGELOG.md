@@ -43,6 +43,7 @@ long reasoning belong in the design docs (`OBSCURED_BOARD.md`, `LOGGING.md`,
 - Presets added: save how you play a round under a name and switch between setups from the top of the settings or from the Quick Bar, without stopping the run; exporting them writes one settings code each, to the clipboard or to a file, and pasting a line back applies it.
 - Max round duration added: cap how long one round may last, and pick what happens when it is up -- stop playing and let the clock run out, so the round finishes as normal and the next one starts, or stop the script.
 - A board that stops taking chains -- the same few tsums lit up over and over with nothing going off -- is now noticed and fanned loose on its own, instead of running until the round ends.
+- Two grey or black-and-white tsums on one board -- the Mandalorian beside Oswald, say -- are told apart instead of being chained together and refused.
 - Reporting a problem added: press Report on the Debug tab or the Quick Bar -- or hold the floating bar's Log button -- and the screen, the screens before it, your settings and the recent log are saved to share or save from Run History; the script saves one by itself whenever it gets stuck. The Quick Bar's Report works while the script is still playing, so it catches the live screen rather than the pause menu.
 - The status line under the floating bar stays clear of what the script reads: on a device where the two would meet it shrinks or steps aside, instead of hiding the board from the script.
 - Quick Bar layout tightened: every control takes only the width its words need, the rows line up in columns, and on a wide screen the block sits centred rather than stretched.
@@ -725,6 +726,20 @@ long reasoning belong in the design docs (`OBSCURED_BOARD.md`, `LOGGING.md`,
 
 ### Fixed
 
+- **Two greys on one board merged into one colour.** The chroma plane puts
+  every near-grey tsum at its origin, so a silver helmet and a black-and-white
+  face differed only in value at half weight -- the Mandalorian and Oswald read
+  22 apart against a merge distance of 40, and every chain through the merged
+  cluster was refused. `findTsums` (`src/pathfinding.ts`) now reads each
+  circle's texture off the board gray it already has -- the spread of 57 samples
+  inside the head and the brightest one -- and `distance3D` counts those two
+  axes between two near-grey colours only, so a saturated tsum's distance is
+  unchanged. On composite piles of that roster refused drags fall from 26% to
+  4%; over the corpus captures it undoes two merges and moves two tsums; on
+  six phone captures of Mandalorian boards the helmet's cluster, merged with
+  the black-and-white tsum on every one before, comes out pure on all six.
+  `board.clusters` carries `contrast` and `peak` per cluster. Board Studio
+  still clusters on colour alone.
 - **`PAGE_DISPATCH.md` grew headings out of wrapped comments.** The page-docs
   generator took any short `//` line in the `PageName` enum for a group
   header, so the last line of a wrapped note ("waits to be closed.") became a
