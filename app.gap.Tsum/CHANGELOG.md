@@ -49,6 +49,17 @@ long reasoning belong in the design docs (`OBSCURED_BOARD.md`, `LOGGING.md`,
 
 ### Added
 
+- **The contributor site (`website/`).** A Docusaurus site that explains the
+  tree to someone who has never opened it: the architecture with diagrams,
+  guides for the common changes (a skill, a setting, a page, a task, logging,
+  lifecycle hooks), publishing, a page on hosting a script library of your
+  own, and the reference tables -- all rewritten from the documents here. Code
+  on the site is fetched from GitHub at view time, `EVENTS.md`,
+  `PAGE_DISPATCH.md` and `BACKLOG.md` are synced in at build time, and
+  `refs:check` there holds every code reference to the tree. Published to
+  GitHub Pages by `.github/workflows/docs.yml`; `CONTRIBUTING.md` at the root
+  is the short form. Screenshots are placeholders for now, listed in
+  `website/IMAGES_NEEDED.md`.
 - **Apache-2.0 license.** `LICENSE` and `NOTICE` at the repo root; the notice
   records the `r2-studio/robotmon-scripts` origin and the inlined Pico CSS, and
   both files ride in the release zip. `package.json` says the same.
@@ -714,6 +725,10 @@ long reasoning belong in the design docs (`OBSCURED_BOARD.md`, `LOGGING.md`,
 
 ### Fixed
 
+- **`PAGE_DISPATCH.md` grew headings out of wrapped comments.** The page-docs
+  generator took any short `//` line in the `PageName` enum for a group
+  header, so the last line of a wrapped note ("waits to be closed.") became a
+  section. A header now has to open its comment run.
 - **The Quick Bar's steppers lost their `+` on the device.** The emulator's
   WebView is Chromium 110, which measures a flex container's intrinsic width
   from what its items contain and counts a bare `flex-basis` for nothing, so

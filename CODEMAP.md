@@ -19,11 +19,18 @@ script added without being mentioned. Run it after moving anything.
 game-automation-scripts/
 ├── CLAUDE.md              rules that override defaults -- read alongside this file
 ├── CODEMAP.md             this file
+├── CONTRIBUTING.md        the short form of the contributor site, for GitHub's
+│                          own "contributing" link
 ├── LICENSE                Apache-2.0, the whole repo
 ├── NOTICE                 what was inherited from where, and the notices the
 │                          release zip carries with it
 ├── .gitattributes         LF line endings everywhere, PNGs binary -- see CLAUDE.md
 ├── .editorconfig          stops an editor putting CRLF back
+├── .github/workflows/     docs.yml builds website/ and publishes it to GitHub Pages
+├── website/               the contributor site (Docusaurus): rewrites of the
+│                          documents below for someone new to the tree, with the
+│                          code pulled from GitHub at view time and the generated
+│                          documents synced in at build time -- website/README.md
 └── app.gap.Tsum/          the only package: the Disney Tsum Tsum script
     ├── src/               the script -- concatenated into one bundle, no imports,
     │                      plus tsums.dat, the one file shipped beside it
@@ -51,6 +58,7 @@ repository beside this one — `DEVELOPMENT.md` § The development toolkit.
 | Question | Read |
 |:--|:--|
 | What a change has to touch before it is finished | [§ Adding something](#adding-something--what-a-change-has-to-touch), below |
+| How to contribute, explained for someone new to the tree | `CONTRIBUTING.md`, then the site under `website/` (its own commands: `website/README.md`) |
 | Under what terms, and what was inherited from where | `LICENSE`, `NOTICE` |
 | What the script does; what a setting means | `README.md` |
 | The log record schema, the log event vocabulary, reading a run with Logdy | `LOGGING.md` |
@@ -425,6 +433,9 @@ Run from `app.gap.Tsum/`.
 | `npm run i18n:check` | What each language is missing, and a `data-i18n` naming no key |
 | `npm run live:check` | Every `SHARE_SLOTS` row has a `LiveSettings` answer, and the value survives the round trip (also run by the build) |
 | `npm run release:alpha` | Build the Alpha channel and publish it to the catalogue. `npm run release:beta` and `npm run release:production` are the other two. `-- --dry-run` shows the entry without writing it |
+
+The contributor site is its own package with its own scripts, run from
+`website/` and listed in `website/README.md`.
 
 ## External trees
 

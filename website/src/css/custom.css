@@ -1,0 +1,38 @@
+/**
+ * Global styles. Infima is the framework; only its variables are overridden.
+ */
+
+:root {
+  --ifm-color-primary: #2e6bc4;
+  --ifm-color-primary-dark: #2960b0;
+  --ifm-color-primary-darker: #275ba6;
+  --ifm-color-primary-darkest: #204b89;
+  --ifm-color-primary-light: #3f79ca;
+  --ifm-color-primary-lighter: #4a81cd;
+  --ifm-color-primary-lightest: #6a98d7;
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='dark'] {
+  --ifm-color-primary: #7fb2f0;
+  --ifm-color-primary-dark: #5f9eec;
+  --ifm-color-primary-darker: #4f94ea;
+  --ifm-color-primary-darkest: #2077e3;
+  --ifm-color-primary-light: #9fc6f4;
+  --ifm-color-primary-lighter: #afd0f6;
+  --ifm-color-primary-lightest: #dfecfb;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}
+
+/* Wide tables scroll inside the page rather than pushing it sideways. */
+.markdown table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* Mermaid diagrams: let them breathe and stay readable in both themes. */
+.docusaurus-mermaid-container {
+  margin: 1.5rem 0;
+}

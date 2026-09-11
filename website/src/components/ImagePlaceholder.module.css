@@ -1,0 +1,35 @@
+.placeholder,
+.figure {
+  margin: 1.5rem auto;
+  text-align: center;
+}
+
+.placeholder {
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  border: 2px dashed var(--ifm-color-emphasis-500);
+  border-radius: var(--ifm-global-radius);
+  background: var(--ifm-color-emphasis-100);
+  color: var(--ifm-color-emphasis-700);
+}
+
+.label {
+  font-weight: 600;
+}
+
+.placeholder figcaption,
+.figure figcaption {
+  font-size: 0.9em;
+  color: var(--ifm-color-emphasis-700);
+}
+
+.figure img {
+  max-width: 100%;
+  border-radius: var(--ifm-global-radius);
+  box-shadow: var(--ifm-global-shadow-lw);
+}

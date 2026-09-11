@@ -225,7 +225,7 @@ flowchart LR
   GamePlaying(["GamePlaying"])
   StartPage["StartPage"]
   TsumLevelUp["TsumLevelUp"]
-  unknown["unknown"]
+  unknown{{"unknown"}}
   GamePlaying -->|9| unknown
   StartPage -->|1| GamePlaying
   unknown -->|8| GamePlaying
@@ -250,10 +250,10 @@ own context passes in.
 
 | from | to | seen | by tapping | first | last |
 |---|---|---|---|---|---|
-| `GamePlaying` | `unknown` | 9 | — | 2026-08-25 | 2026-08-25 |
+| `GamePlaying` | `unknown` ⬡ | 9 | — | 2026-08-25 | 2026-08-25 |
 | `StartPage` | `GamePlaying` | 1 | — | 2026-08-25 | 2026-08-25 |
-| `unknown` | `GamePlaying` | 8 | — | 2026-08-25 | 2026-08-25 |
-| `unknown` | `TsumLevelUp` | 1 | — | 2026-08-25 | 2026-08-25 |
+| `unknown` ⬡ | `GamePlaying` | 8 | — | 2026-08-25 | 2026-08-25 |
+| `unknown` ⬡ | `TsumLevelUp` | 1 | — | 2026-08-25 | 2026-08-25 |
 
 ### Not yet observed
 
@@ -314,8 +314,6 @@ On a repeat look at the same page, 4 of these 5 run: the rest fire only when the
 | 5 | `notify.forecast` | notify | every look |
 
 On a repeat look at the same page, 4 of these 5 run: the rest fire only when the page changes.
-
-### waits to be closed.
 
 #### `TsumLevelUp` <sub>transient</sub>
 
@@ -503,8 +501,6 @@ On a repeat look at the same page, 3 of these 4 run: the rest fire only when the
 | 6 | `notify.forecast` | notify | every look |
 
 On a repeat look at the same page, 5 of these 6 run: the rest fire only when the page changes.
-
-### that says it worked.
 
 #### `TsumSortOrder` <sub>permanent</sub>
 
@@ -776,8 +772,6 @@ On a repeat look at the same page, 3 of these 4 run: the rest fire only when the
 | 4 | `notify.forecast` | notify | every look |
 
 On a repeat look at the same page, 3 of these 4 run: the rest fire only when the page changes.
-
-### entry carries it.
 
 #### `unknown` <sub>permanent</sub>
 

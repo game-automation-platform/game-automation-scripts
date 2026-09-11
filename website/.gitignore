@@ -1,0 +1,7 @@
+node_modules/
+build/
+.docusaurus/
+.cache-loader/
+
+# Written by `npm run sync` from app.gap.Tsum/*.md; never edited here.
+docs/reference/generated/

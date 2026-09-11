@@ -56,14 +56,19 @@ function listPageNames() {
 
   const out = [];
   let section = '';
+  let prevWasComment = false;
   for (const line of block[1].split('\n')) {
     const comment = /^\s*\/\/\s*(.+?)\s*$/.exec(line);
     if (comment) {
       // Only the short group headers ("// In game", "// Mail / hearts") are
       // sections; the long prose comments in that block are notes, not groups.
-      if (comment[1].length <= 40) section = comment[1];
+      // A header opens its comment run -- the short last line of a wrapped
+      // note ("waits to be closed.") is not one.
+      if (!prevWasComment && comment[1].length <= 40) section = comment[1];
+      prevWasComment = true;
       continue;
     }
+    prevWasComment = false;
     const member = /^\s*(\w+)\s*=\s*'([^']*)'/.exec(line);
     if (member) out.push({ member: member[1], name: member[2], section });
   }

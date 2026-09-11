@@ -91,7 +91,7 @@ function tableUnder(text, title) {
  * `host.js`) where the sentence already says which directory; documents and
  * configs are still checked bare, because those all sit at one of the two roots.
  */
-const RepoDirs = ['src', 'tools', 'docs', 'app.gap.Tsum'];
+const RepoDirs = ['src', 'tools', 'docs', 'app.gap.Tsum', 'website'];
 
 function isRepoPath(token) {
   if (/^[A-Za-z]:[\\/]/.test(token)) return false;          // external, absolute

@@ -1,0 +1,80 @@
+name: Docs
+
+# Builds the contributor site under website/ and publishes it to GitHub Pages.
+# Source files are in the trigger so refs:check catches a code reference whose
+# line range has drifted, not just a change to the site itself.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'website/**'
+      - 'app.gap.Tsum/*.md'
+      - 'app.gap.Tsum/src/**'
+      - 'app.gap.Tsum/tools/pageDocs/**'
+      - 'app.gap.Tsum/tools/eventDocs/**'
+      - '.github/workflows/docs.yml'
+  pull_request:
+    paths:
+      - 'website/**'
+      - 'app.gap.Tsum/*.md'
+      - 'app.gap.Tsum/src/**'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Queue deploys rather than cancelling one in flight.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: website
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Check code references and image placeholders
+        run: npm run refs:check
+
+      - name: Build
+        run: npm run build
+
+      - name: Configure Pages
+        if: github.event_name != 'pull_request'
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: website/build
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
