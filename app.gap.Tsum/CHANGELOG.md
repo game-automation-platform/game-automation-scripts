@@ -40,6 +40,7 @@ long reasoning belong in the design docs (`OBSCURED_BOARD.md`, `LOGGING.md`,
 
 - Two grey or black-and-white tsums on one board -- the Mandalorian beside Oswald, say -- are told apart instead of being chained together and refused.
 - Link MyTsum first finds your tsum's colour on the board again, instead of guessing from the skill button.
+- Round stats no longer leave the base coins blank when the counter ends in 44.
 
 ### Added
 
@@ -92,6 +93,16 @@ long reasoning belong in the design docs (`OBSCURED_BOARD.md`, `LOGGING.md`,
   five of the six phone captures -- the sixth, a fever board, has a 3-tsum
   grey fragment 4 nearer than the helmet's 11, which a texture column in the
   library would settle.
+- **`base_coins` was blank for every counter ending in 44.** Two '4's stand
+  bar to bar, and on the level-up panel -- read at a floor of 40 because the
+  HUD is dimmed there -- the antialiased skirt between them reads 40-49, so
+  the mask joined the pair into one 30-wide contour that matched nothing.
+  `statsSplitJoined` (`src/roundStats.ts`) now cuts a box wider than the
+  row's tallest glyph at the column with the least light above the floor,
+  bounded so a digit's width is left either side; the join is a single
+  column at 0 light, where a '0''s thinnest column is core. Nine debug shots
+  from the device all read, and one is in the corpus for `pages:stats`.
+  `stats.joinedGlyphsCut` records a cut.
 - **`PAGE_DISPATCH.md` grew headings out of wrapped comments.** The page-docs
   generator took any short `//` line in the `PageName` enum for a group
   header, so the last line of a wrapped note ("waits to be closed.") became a

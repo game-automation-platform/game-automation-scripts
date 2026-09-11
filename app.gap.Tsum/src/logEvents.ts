@@ -311,6 +311,7 @@ namespace Log {
   export const enum Stats {
     CoinCounter     = 'stats.coinCounter',
     DeviceIdUnsaved = 'stats.deviceIdUnsaved',
+    JoinedGlyphsCut = 'stats.joinedGlyphsCut',
     NeverRead       = 'stats.neverRead',
     NeverSettled    = 'stats.neverSettled',
     Publishing      = 'stats.publishing',

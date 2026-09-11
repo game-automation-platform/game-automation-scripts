@@ -13,7 +13,8 @@
 // bitmap and compare it against the templates below. The game draws every
 // number in the same typeface -- the big orange score and the white coin
 // counters normalise to the same shapes -- so one template set covers all of
-// them.
+// them. A box the mask joined across two glyphs ("44" on the dimmed HUD) is
+// cut back into them first (`statsSplitJoined`).
 //
 // **Which screen a field is read on is part of the measurement, not an
 // implementation detail.** Both of the numbers this file gets wrong, it gets
@@ -336,6 +337,13 @@ const StatsSeparatorHeight = 0.62;
 // before this is measured -- is 0.5, and on the big orange score it is 0.42.
 const StatsFieldGapHeights = 1.2;
 
+// The narrowest and widest a digit is, in glyph heights: '1' measures 0.39-0.47
+// and '4' up to 0.84 on every frame in the corpus. A contour wider than the
+// tallest glyph in its row is two glyphs the mask joined, and the cut between
+// them (`statsSplitJoined`) has to leave a digit's width either side.
+const StatsDigitMinWidth = 0.33;
+const StatsDigitMaxWidth = 0.9;
+
 // A glyph has to match its best template this well, and beat the runner-up by
 // this much, for the field to be accepted. The worst genuine digit in the
 // reference screenshots scores 0.886 with a 0.064 lead.
@@ -578,6 +586,117 @@ function statsGlyphBitmap(mask: NativeImage, box: ContourBox): string[] | null {
   }
 }
 
+/**
+ * Cuts a contour the mask joined across two glyphs back into them, or returns
+ * it alone.
+ *
+ * '4' is the digit that joins. Its bar reaches the edge of its own box, so two
+ * of them stand bar to bar with only the kerning between, and on the level-up
+ * panel -- read at a floor of 40, because the HUD is dimmed to 72-79 there --
+ * the antialiased skirt between "44" reads 40-49 and links them into one
+ * 30-wide contour. That matches nothing, so every counter ending in 44 was
+ * written empty.
+ *
+ * No digit is wider than 0.84 of its height, so a box wider than the row's
+ * tallest glyph holds more than one. The cut goes at the column with the least
+ * light above the region's floor, read off the crop rather than the mask: a
+ * join is skirt sitting on the floor, where the thinnest column a real glyph
+ * has -- the middle of a '0', two pixels -- is core, and counting mask pixels
+ * would make those a tie. Only columns leaving a digit's width either side are
+ * candidates; with none the box is left whole and fails as it always did,
+ * rather than reading wrong. Each half is re-bounded to its own pixels, so it
+ * is the box `findContours` would have returned without the join, and the
+ * remainder is cut again if it is still too wide.
+ */
+function statsSplitJoined(img: NativeImage, region: StatsRegion, box: ContourBox, tallest: number): ContourBox[] {
+  if (box.width <= tallest) {
+    return [box];
+  }
+  const minW = Math.ceil(tallest * StatsDigitMinWidth);
+  const first = minW;
+  const last = Math.min(Math.floor(tallest * StatsDigitMaxWidth), box.width - 1 - minW);
+  if (first > last) {
+    return [box];
+  }
+  const points: Point[] = [];
+  for (let y = 0; y < box.height; y++) {
+    for (let x = 0; x < box.width; x++) {
+      points.push({x: box.x + x, y: box.y + y});
+    }
+  }
+  const pixels = getImageColors(img, points);
+  // Per column: how far above the floor its in-range pixels sit, and whether
+  // any pixel is in range at all (the mask, re-derived so no second read).
+  const light: number[] = [];
+  const inked: boolean[][] = [];
+  for (let x = 0; x < box.width; x++) {
+    light.push(0);
+  }
+  for (let y = 0; y < box.height; y++) {
+    const row: boolean[] = [];
+    for (let x = 0; x < box.width; x++) {
+      const p = pixels[y * box.width + x];
+      const above = Math.min(p.r - region.lo[0], p.g - region.lo[1], p.b - region.lo[2]);
+      const on = above >= 0 && p.r <= region.hi[0] && p.g <= region.hi[1] && p.b <= region.hi[2];
+      row.push(on);
+      if (on) {
+        light[x] += above;
+      }
+    }
+    inked.push(row);
+  }
+  let cut = first;
+  for (let x = first + 1; x <= last; x++) {
+    if (light[x] < light[cut]) {
+      cut = x;
+    }
+  }
+  // The join can be two columns wide; drop the whole run at the minimum.
+  let cutEnd = cut;
+  while (cutEnd < last && light[cutEnd + 1] === light[cut]) {
+    cutEnd++;
+  }
+  const bound = function(x0: number, x1: number): ContourBox | null {
+    let minX = box.width, maxX = -1, minY = box.height, maxY = -1, area = 0;
+    for (let y = 0; y < box.height; y++) {
+      for (let x = x0; x < x1; x++) {
+        if (!inked[y][x]) {
+          continue;
+        }
+        area++;
+        if (x < minX) { minX = x; }
+        if (x > maxX) { maxX = x; }
+        if (y < minY) { minY = y; }
+        if (y > maxY) { maxY = y; }
+      }
+    }
+    return maxX < 0 ? null
+      : {x: box.x + minX, y: box.y + minY, width: maxX - minX + 1, height: maxY - minY + 1, area: area};
+  };
+  const left = bound(0, cut);
+  const right = bound(cutEnd + 1, box.width);
+  logDebug(Log.Stats.JoinedGlyphsCut, {
+    region: region.name,
+    x: box.x,
+    width: box.width,
+    tallest: tallest,
+    cutAt: cut,
+    cutWidth: cutEnd - cut + 1,
+    light: light[cut],
+  });
+  const parts: ContourBox[] = [];
+  if (left !== null) {
+    parts.push(left);
+  }
+  if (right !== null) {
+    const rest = statsSplitJoined(img, region, right, tallest);
+    for (let i = 0; i < rest.length; i++) {
+      parts.push(rest[i]);
+    }
+  }
+  return parts;
+}
+
 /** Best-matching digit for one normalised glyph, with how clear the win was. */
 function statsMatchGlyph(rows: string[], aspect: number): {digit: string; score: number; margin: number} {
   let best = -1;
@@ -680,6 +799,19 @@ Tsum.prototype.readStatsNumbers = function(region) {
         tallest = boxes[i].height;
       }
     }
+    // One box per glyph: separators and speckle out, and a contour the mask
+    // joined across two glyphs cut back into them.
+    const glyphs: ContourBox[] = [];
+    for (let i = 0; i < boxes.length; i++) {
+      const box = boxes[i];
+      if (box.height < tallest * StatsSeparatorHeight || box.width < 2) {
+        continue;  // thousands separator, or speckle the mask let through
+      }
+      const parts = statsSplitJoined(img, region, box, tallest);
+      for (let j = 0; j < parts.length; j++) {
+        glyphs.push(parts[j]);
+      }
+    }
     const fields: number[] = [];
     const gap = tallest * StatsFieldGapHeights;
     let digits = '';
@@ -688,11 +820,8 @@ Tsum.prototype.readStatsNumbers = function(region) {
     // measured digit to digit -- a thousands separator is dropped before it
     // counts, and the gap either side of one is small anyway.
     let prevRight = -1;
-    for (let i = 0; i < boxes.length; i++) {
-      const box = boxes[i];
-      if (box.height < tallest * StatsSeparatorHeight || box.width < 2) {
-        continue;  // thousands separator, or speckle the mask let through
-      }
+    for (let i = 0; i < glyphs.length; i++) {
+      const box = glyphs[i];
       if (read >= StatsMaxDigits) {
         logDebug(Log.Stats.TooManyGlyphs,
           { region: region.name, digits: read, maxDigits: StatsMaxDigits });
