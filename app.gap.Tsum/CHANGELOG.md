@@ -39,6 +39,7 @@ long reasoning belong in the design docs (`OBSCURED_BOARD.md`, `LOGGING.md`,
 ### Summary
 
 - Two grey or black-and-white tsums on one board -- the Mandalorian beside Oswald, say -- are told apart instead of being chained together and refused.
+- Link MyTsum first finds your tsum's colour on the board again, instead of guessing from the skill button.
 
 ### Added
 
@@ -77,6 +78,20 @@ long reasoning belong in the design docs (`OBSCURED_BOARD.md`, `LOGGING.md`,
   the black-and-white tsum on every one before, comes out pure on all six.
   `board.clusters` carries `contrast` and `peak` per cluster. Board Studio
   still clusters on colour alone.
+- **"Link MyTsum first" had been sampling the skill gauge since 0.12's colour
+  model.** The library's colour column was still `board=hsv31`, the HSV
+  derivation, while `MyTsumBoard.tag` asked for `chroma1`, so the loader
+  dropped the column and the match fell back to the button sample that lands
+  on the gauge. The library could not be regenerated because the derivation
+  script reads `MyTsumBoard.width` and `.background` out of `src/data.ts` and
+  the 0.12 dead-code sweep had deleted them as unread. Both are back, with a
+  note saying who reads them, and `src/tsums.dat` is regenerated as `chroma1`:
+  every one of the 769 rows carries a colour, ids and signatures unchanged.
+  The derivation lands inside the gate on all four labelled Buzz boards
+  (1 to 23 away), and the Mandalorian's colour picks the helmet's cluster on
+  five of the six phone captures -- the sixth, a fever board, has a 3-tsum
+  grey fragment 4 nearer than the helmet's 11, which a texture column in the
+  library would settle.
 - **`PAGE_DISPATCH.md` grew headings out of wrapped comments.** The page-docs
   generator took any short `//` line in the `PageName` enum for a group
   header, so the last line of a wrapped note ("waits to be closed.") became a

@@ -225,27 +225,38 @@ var MyTsumPortrait = {
 // So the reference is precomputed instead, off the same block art the library
 // is built from, and looked up by the shorthand `identifyMyTsum()` has already
 // read. The lexicon's `board_colors.py` is the long form.
+//
+// Nothing in the bundle reads `width` or `background`: the derivation script
+// does, out of this file, so a colour derived at one width and matched at
+// another cannot happen. They were deleted once as unread and that stopped the
+// library being regenerated for a week -- leave them.
 var MyTsumBoard = {
   // The library header must carry `board=<tag>` before its colour column is
   // trusted. Bumped when anything below changes the numbers: unlike a stale
   // signature, a stale colour gives a *wrong* cluster rather than no answer,
   // and the rest of the file is still perfectly good at naming tsums -- so this
   // is versioned on its own instead of refusing the library whole.
-  // 'hsv31' until the board model moved to the chroma plane. The library that
-  // ships still carries that tag and so no longer answers: its colours were
-  // derived through the old blur ordering, which is the read the chroma model
-  // replaced. The column stays HSV -- `board_colors.py` already derives it the
-  // new way and the scan converts on the compare -- so regenerating the
-  // library is the whole of what turns it back on. Until then MyTsum comes
-  // from the skill-button sample.
+  // 'hsv31' was the HSV read at this width; 'chroma1' is the chroma plane's
+  // blur-then-convert read of the same art. The column stays HSV either way
+  // and the scan converts on the compare. A library carrying the wrong tag is
+  // simply not consulted, and MyTsum comes from the skill-button sample.
   tag: 'chroma1',
+  // How wide the game draws a tsum, in the `Config.screenResize` play square.
+  // Fitted over the labelled boards, not measured by eye -- and wider than
+  // `Config.tsumWidth` (25) on purpose: that one is centre-to-centre spacing
+  // of a pile that overlaps, this one is the sprite.
+  width: 31,
+  // The board blue the colours are derived over, BGR. It reaches the middle of
+  // a tsum through the 22px sample blur, so it is part of the derivation rather
+  // than a backstop -- but only just: over four boards a fever tint moved the
+  // derived colour by under 6.
+  background: {b: 90, g: 49, r: 18},
   // How near a cluster has to be to count as MyTsum.
   //
   // NOT MEASURED on the chroma plane. Carried over from the 30 the HSV model
   // used as the same multiple of the merge distance -- two clusters' worth of
-  // slack -- because the reference moved as well: it is the button sample now,
-  // not the library, so the "3 to 10 away" this was set against does not apply.
-  // Worth re-reading off a run's `board.clusters` records.
+  // slack. Worth re-reading off a run's `board.clusters` records now that the
+  // library answers again.
   maxDistance: 80
 };
 
