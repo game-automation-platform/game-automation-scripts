@@ -1,0 +1,41 @@
+{
+  "name": "app.gap.tsum",
+  "version": "0.12",
+  "description": "Game Automation Platform automation script for Tsum Tsum.",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "node tools/build/build.js",
+    "build:ps": "powershell -ExecutionPolicy Bypass -File ./build.ps1",
+    "buildAndAdb": "node tools/build/build.js --adb",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.settings.json --noEmit && tsc -p tsconfig.quickbar.json --noEmit",
+    "typecheck:game": "tsc --noEmit",
+    "typecheck:settings": "tsc -p tsconfig.settings.json --noEmit",
+    "typecheck:quickbar": "tsc -p tsconfig.quickbar.json --noEmit",
+    "pages:docs": "node tools/pageDocs/generate.js",
+    "pages:docs:check": "node tools/pageDocs/generate.js --check",
+    "events:docs": "node tools/eventDocs/generate.js",
+    "events:docs:check": "node tools/eventDocs/generate.js --check",
+    "dispatch:eval": "node tools/dispatchEval/run.js",
+    "dispatch:update": "node tools/dispatchEval/run.js --update",
+    "map:check": "node tools/codemap/check.js",
+    "i18n:check": "node tools/i18n/check.js",
+    "live:check": "node tools/liveSettings/check.js",
+    "release:alpha": "node tools/release/release.js --channel Alpha",
+    "release:beta": "node tools/release/release.js --channel Beta",
+    "release:production": "node tools/release/release.js --channel Production",
+    "adb": "adb push dist/index.js dist/index.html dist/quickbar.html dist/tsums.dat \"/sdcard/Download/GameAutomationPlatform/scripts/Official GAP/Tsum Tsum/\""
+  },
+  "keywords": [],
+  "author": "Thi Nguyen",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=20.15"
+  },
+  "devDependencies": {
+    "@picocss/pico": "^2.1.1",
+    "jpeg-js": "^0.4.4",
+    "pngjs": "^7.0.0",
+    "terser": "^5.50.0",
+    "typescript": "^6.0.3"
+  }
+}

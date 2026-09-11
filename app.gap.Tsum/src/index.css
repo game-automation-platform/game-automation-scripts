@@ -1,0 +1,1067 @@
+/*
+ * The settings page, on top of Pico CSS.
+ *
+ * Everything here is either a component Pico does not have (the tab bar, the
+ * number stepper, the app bar, the group card) or a density adjustment: Pico is
+ * designed for a document on a desktop, and this is a long list of controls on a
+ * phone held in one hand.
+ *
+ * **Colours.** There is exactly one place a colour is written down -- the
+ * `--gap-*` block below, which is the design system's token table: dark values
+ * first, light ones under `[data-theme="light"]`. Everything after it, Pico's
+ * own variables included, is expressed in those tokens, and no component rule
+ * holds a literal colour. That is what lets this page match the app screen for
+ * screen and still keep a working light theme, which the design does not draw
+ * but the page has a toggle for.
+ *
+ * The tokens are the ones the Android side uses, stated there in
+ * `app/src/main/res/values/colors.xml` with their OKLCH originals in comments.
+ */
+
+/* --- Design tokens --------------------------------------------------------- */
+
+:root {
+    /* Ground and surfaces */
+    --gap-bg: #0d1218;
+    --gap-surface: #171d25;
+    --gap-surface-2: #252c35;
+    --gap-line: #313942;
+    --gap-row-line: #272c32;
+
+    /* Text */
+    --gap-text: #eff2f6;
+    --gap-muted: #878d95;
+    --gap-muted-2: #7b8189;
+    --gap-on-accent: #080e16;
+
+    /* Accents, each with the soft twin that goes behind it */
+    --gap-accent: #ef852e;
+    --gap-accent-soft: #482304;
+    --gap-ok: #21bfa0;
+    --gap-ok-soft: #003227;
+    --gap-warn: #e0af3b;
+    --gap-warn-soft: #3e2a00;
+    --gap-danger: #e24947;
+    --gap-danger-soft: #521615;
+
+    /* An unfinished skill's colour -- see `SkillStatus` in src/skillOptions.ts.
+       Alpha is its own orange rather than --gap-accent: the accent already means
+       "this row is selected" in the very list these are drawn in. */
+    --gap-alpha: #f59e42;
+    --gap-alpha-soft: #4a2a06;
+    --gap-beta: #5aa9f0;
+    --gap-beta-soft: #10304d;
+
+    /* Shape, because the app states its radii once too. */
+    --gap-radius-card: 14px;
+    --gap-radius-pill: 999px;
+    --gap-radius-control: 8px;
+    --gap-scrim: rgba(0, 0, 0, 0.55);
+    /* The switch knob, white in both themes -- it is the only thing on the
+       page that does not change with the ground behind it. */
+    --gap-knob: #ffffff;
+}
+
+/*
+ * Light.
+ *
+ * Not in the handoff, which is one dark palette -- but this page has a theme
+ * toggle and the device may be in either mode, so every token needs a light
+ * value or the toggle produces a half-dark screen. The accents are the same
+ * hues at a lightness that reads on white, and the softs are the same hues at
+ * the top of the range. `data-theme` is always set explicitly by settings.ts,
+ * even when it only mirrors the device, so this one selector is exhaustive.
+ *
+ * Written `:root[data-theme=...]` rather than `[data-theme=...]` throughout, so
+ * it outranks Pico's own `:root:not([data-theme=light])` dark rule on
+ * specificity as well as on source order.
+ */
+:root[data-theme="light"] {
+    --gap-bg: #f5f7f9;
+    --gap-surface: #ffffff;
+    --gap-surface-2: #e9edf2;
+    --gap-line: #d4dae1;
+    --gap-row-line: #e3e7ec;
+
+    --gap-text: #151b23;
+    --gap-muted: #5d646c;
+    --gap-muted-2: #6f757d;
+    --gap-on-accent: #fffbf9;
+
+    --gap-accent: #b55000;
+    --gap-accent-soft: #ffe6d1;
+    --gap-ok: #007e65;
+    --gap-ok-soft: #d2f6eb;
+    --gap-warn: #916a00;
+    --gap-warn-soft: #fbebcb;
+    --gap-danger: #be222a;
+    --gap-danger-soft: #ffe2de;
+
+    --gap-alpha: #a24a00;
+    --gap-alpha-soft: #ffe8cf;
+    --gap-beta: #1a5f9e;
+    --gap-beta-soft: #d9ecfd;
+}
+
+/* --- Pico, re-pointed ------------------------------------------------------
+
+   Pico draws the controls this page does not build itself -- the switch, the
+   number field, the buttons -- so its variables are mapped onto the tokens
+   rather than left on its own slate palette. Doing it here is what lets every
+   rule below stay ignorant of which system a colour came from. */
+
+:root:not([data-theme]),
+:root[data-theme="light"],
+:root[data-theme="dark"] {
+    --pico-background-color: var(--gap-bg);
+    --pico-color: var(--gap-text);
+    --pico-h1-color: var(--gap-text);
+    --pico-h2-color: var(--gap-text);
+    --pico-h3-color: var(--gap-text);
+    --pico-muted-color: var(--gap-muted);
+    --pico-muted-border-color: var(--gap-row-line);
+    --pico-card-background-color: var(--gap-surface);
+    --pico-card-sectioning-background-color: var(--gap-surface);
+
+    --pico-primary: var(--gap-accent);
+    --pico-primary-hover: var(--gap-accent);
+    --pico-primary-focus: var(--gap-accent-soft);
+    --pico-primary-inverse: var(--gap-on-accent);
+    --pico-primary-background: var(--gap-accent);
+    --pico-primary-border: var(--gap-accent);
+    --pico-primary-hover-background: var(--gap-accent);
+    --pico-primary-hover-border: var(--gap-accent);
+
+    --pico-del-color: var(--gap-danger);
+    --pico-ins-color: var(--gap-ok);
+    --pico-mark-background-color: var(--gap-warn-soft);
+
+    --pico-form-element-background-color: var(--gap-surface-2);
+    --pico-form-element-border-color: var(--gap-line);
+    --pico-form-element-color: var(--gap-text);
+    --pico-form-element-placeholder-color: var(--gap-muted-2);
+    --pico-form-element-focus-color: var(--gap-accent);
+    --pico-form-element-active-background-color: var(--gap-surface-2);
+    --pico-form-element-active-border-color: var(--gap-accent);
+
+    /* The switch, which is the most-used control on the page by a distance:
+       teal when on, the divider colour when off, white knob. */
+    --pico-switch-background-color: var(--gap-line);
+    --pico-switch-checked-background-color: var(--gap-ok);
+    --pico-switch-color: var(--gap-knob);
+    --pico-switch-thumb-box-shadow: none;
+
+    --pico-border-radius: var(--gap-radius-control);
+    --pico-card-box-shadow: none;
+}
+
+/* Density. Pico's own scale is comfortable for prose and too airy for a form
+   with ninety rows in it. */
+:root {
+    --pico-font-size: 100%;
+    --pico-spacing: 0.75rem;
+    --pico-form-element-spacing-vertical: 0.45rem;
+    --pico-form-element-spacing-horizontal: 0.6rem;
+    --pico-typography-spacing-vertical: 0.75rem;
+    --pico-block-spacing-vertical: 0.75rem;
+    --pico-block-spacing-horizontal: 0.9rem;
+
+    /* Local tokens, so the few sizes that repeat are stated once. */
+    --tsum-bar-height: 3rem;
+    --tsum-control-width: 11.5rem;
+}
+
+html {
+    font-size: 15px;
+}
+
+body {
+    background-color: var(--gap-bg);
+    /* The app bar and tab bar are sticky; this keeps the last row clear of the
+       phone's own gesture bar. */
+    padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.container {
+    max-width: 48rem;
+    padding-inline: var(--pico-spacing);
+}
+
+/* --- App bar ---------------------------------------------------------------
+
+   The loaded version as a teal pill at one end, the theme toggle as a round
+   chip at the other. `surface` rather than the accent, because on this page the
+   accent means "selected", and a whole bar of it would outshout the one tab
+   that is.
+
+   There is no title: the panel this page is drawn inside has its own header
+   above it, and a second one would be both redundant and a string to translate
+   twice. */
+
+.app-bar {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    height: var(--tsum-bar-height);
+    padding: 0 var(--pico-spacing);
+    background-color: var(--gap-surface);
+    color: var(--gap-text);
+}
+
+/*
+ * `:not(:empty)` matters: settings.ts leaves this blank until the host answers
+ * with a version, and an empty pill is a coloured smudge in the corner.
+ */
+.app-title {
+    margin-inline-end: auto;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--gap-ok);
+}
+
+.app-title:not(:empty) {
+    padding: 0.2rem 0.6rem;
+    border-radius: var(--gap-radius-pill);
+    background: var(--gap-ok-soft);
+}
+
+.theme-toggle {
+    width: 2rem;
+    height: 2rem;
+    /* Pico gives every `[type=button]` a bottom margin; left in place it lifts
+       the button off the bar's centre line, above the pill and the dropdown. */
+    margin: 0;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    border: none;
+    border-radius: 50%;
+    background: var(--gap-surface-2);
+    color: var(--gap-text);
+    cursor: pointer;
+}
+
+.theme-toggle:hover,
+.theme-toggle:focus-visible {
+    background: var(--gap-line);
+}
+
+.theme-toggle .icon {
+    grid-area: 1 / 1;
+    width: 1.05rem;
+    height: 1.05rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* One icon at a time: the moon offers dark, the sun offers light. `data-theme`
+   is always set explicitly by the script -- even when it only mirrors the
+   device -- so these two rules are exhaustive. */
+[data-theme="dark"] .icon-moon,
+.icon-sun {
+    display: none;
+}
+
+[data-theme="dark"] .icon-sun {
+    display: block;
+}
+
+/* --- Presets ---------------------------------------------------------------
+
+   Two controls in the app bar -- which configuration is loaded, and the panel
+   that saves one -- plus that panel, sticky under the bar so it opens where the
+   button was pressed rather than at the top of a scrolled page.
+
+   The dropdown gives way before the theme toggle does: it is the only thing up
+   here with text in it, so it is the only thing that can be squeezed. */
+
+.preset-select {
+    display: flex;
+    align-items: center;
+    gap: 0.15rem;
+    /* `1 1 auto` from a zero basis: the name is as wide as the bar allows and
+       ellipsises, rather than pushing the two round buttons off the edge. */
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 11rem;
+    margin: 0;
+    padding: 0.28rem 0.3rem 0.28rem 0.6rem;
+    border: 1px solid var(--gap-line);
+    border-radius: var(--gap-radius-pill);
+    background: var(--gap-surface-2);
+    color: var(--gap-text);
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.preset-select:disabled {
+    color: var(--gap-muted);
+    opacity: 1;   /* Pico dims a disabled control; the label still has to read. */
+}
+
+.preset-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: left;
+}
+
+.preset-caret {
+    flex: 0 0 auto;
+    width: 0.9rem;
+    height: 0.9rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+}
+
+/* The theme toggle's shape, because it is the button beside it. */
+.preset-save {
+    width: 2rem;
+    height: 2rem;
+    flex: 0 0 auto;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    border: none;
+    border-radius: 50%;
+    background: var(--gap-surface-2);
+    color: var(--gap-text);
+}
+
+.preset-save:hover,
+.preset-save:focus-visible,
+.preset-select:hover,
+.preset-select:focus-visible {
+    background: var(--gap-line);
+    color: var(--gap-text);
+}
+
+.preset-save .icon {
+    width: 1.05rem;
+    height: 1.05rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* Over the tab bar rather than beside it: this is transient, and covering a row
+   of tabs for the moment it is open costs less than pushing the page down. */
+.preset-panel {
+    position: sticky;
+    top: var(--tsum-bar-height);
+    z-index: 4;
+    padding: 0.5rem var(--pico-spacing) 0.6rem;
+    background: var(--gap-surface);
+    box-shadow: inset 0 -1px 0 var(--gap-line);
+}
+
+.preset-panel[hidden] {
+    display: none;
+}
+
+.preset-input {
+    width: 100%;
+    margin-bottom: 0.45rem;
+    font-size: 0.85rem;
+}
+
+.preset-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.preset-actions .row-button:disabled {
+    color: var(--gap-muted);
+    opacity: 1;
+}
+
+.preset-danger:not(:disabled) {
+    color: var(--gap-danger);
+}
+
+.preset-quiet {
+    margin-inline-start: auto;
+    color: var(--gap-muted);
+}
+
+/* Also the export row's line, cloned from `tpl-status`. */
+.preset-status {
+    margin: 0.4rem 0 0;
+    font-size: 0.78rem;
+    color: var(--gap-accent);
+    word-break: break-word;
+}
+
+.preset-status:empty {
+    display: none;
+}
+
+.preset-status.share-error {
+    color: var(--gap-danger);
+}
+
+/* --- Tab bar --------------------------------------------------------------- */
+
+.tab-bar {
+    position: sticky;
+    top: var(--tsum-bar-height);
+    z-index: 2;
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+    background-color: var(--gap-surface);
+    box-shadow: inset 0 -1px 0 var(--gap-line);
+}
+
+.tab-bar::-webkit-scrollbar {
+    display: none;
+}
+
+.tab-button {
+    flex: 1 0 auto;
+    margin: 0;
+    padding: 0.55rem 1.05rem;
+    border: none;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    background: transparent;
+    color: var(--gap-muted);
+    font-size: 0.87rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.tab-button[aria-selected="true"] {
+    color: var(--gap-accent);
+    border-bottom-color: var(--gap-accent);
+}
+
+/* --- Groups ----------------------------------------------------------------
+
+   A group is a card now, not a run of rows on the page ground. With fourteen of
+   them across five tabs, the card edge is what says where one subject ends --
+   which the hairline between rows cannot, being the same rule that separates
+   two rows inside one group. */
+
+.tab-panel[hidden] {
+    display: none;
+}
+
+.group {
+    margin: var(--pico-spacing) 0;
+    padding: 0.25rem 0.9rem 0.4rem;
+    border-radius: var(--gap-radius-card);
+    background: var(--gap-surface);
+}
+
+.group-title {
+    margin: 0.75rem 0 0;
+    font-size: 0.73rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--gap-muted);
+}
+
+.group-help {
+    margin: 0.25rem 0 0.1rem;
+    font-size: 0.78rem;
+    color: var(--gap-muted);
+}
+
+.group-warn .group-title,
+.group-warn .group-help {
+    color: var(--gap-danger);
+}
+
+/* --- Setting rows ---------------------------------------------------------- */
+
+.setting-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0;
+    border-top: 1px solid var(--gap-row-line);
+}
+
+.setting-row:first-child {
+    border-top: none;
+}
+
+.row-label {
+    flex: 1;
+    min-width: 0;
+}
+
+.row-title {
+    display: block;
+    font-size: 0.9rem;
+    line-height: 1.3;
+    color: var(--gap-text);
+}
+
+.row-help {
+    display: block;
+    margin-top: 0.1rem;
+    font-size: 0.75rem;
+    line-height: 1.35;
+    color: var(--gap-muted);
+}
+
+.row-help:empty {
+    display: none;
+}
+
+.row-control {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.35rem;
+    max-width: var(--tsum-control-width);
+}
+
+/* A dev-only row, revealed by tapping the build date ten times. */
+.setting-row[hidden] {
+    display: none;
+}
+
+/* Monospace, like the app's own build line and every other machine string. */
+.setting-note .note-text {
+    font-family: var(--pico-font-family-monospace);
+    font-size: 0.72rem;
+    color: var(--gap-muted-2);
+}
+
+/* Pico gives every form control a bottom margin, for stacked forms. Rows here
+   are single-line, so it only pushes the control off centre. */
+.row-control input,
+.row-control button {
+    margin-bottom: 0;
+}
+
+.setting-switch {
+    flex: 0 0 auto;
+}
+
+.setting-text {
+    width: var(--tsum-control-width);
+    font-size: 0.85rem;
+}
+
+/* --- Dropdown -------------------------------------------------------------
+
+   Not a <select>: see the comment on `tpl-select` in index.html. The button
+   below is dressed as the design's value pill, and the list it opens is an
+   ordinary element parked on <body>, because a WebView in an overlay window
+   cannot open a popup. */
+
+.setting-select {
+    /* Long skill names; let the dropdown use the whole control column. */
+    width: var(--tsum-control-width);
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin: 0;
+    padding: 0.3rem 0.65rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-align: left;
+    border: none;
+    border-radius: var(--gap-radius-pill);
+    background: var(--gap-accent-soft);
+    color: var(--gap-accent);
+}
+
+/* An outline rather than a border swap: a border would resize the pill, and a
+   control that grows when you open it drags the row under it. */
+.setting-select[aria-expanded="true"] {
+    outline: 2px solid var(--gap-accent);
+    outline-offset: 1px;
+}
+
+/* A row rather than a text node, so the status pill sits beside the name and
+   only the name is ellipsed when the row is narrow. */
+.select-value {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.select-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.select-caret {
+    flex: 0 0 auto;
+    width: 1rem;
+    height: 1rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0.75;
+}
+
+/* The sheet covers the whole viewport, which in the host is the settings panel
+   and nothing else -- there is no browser chrome to reach around. */
+.select-sheet {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.select-scrim {
+    position: absolute;
+    inset: 0;
+    background: var(--gap-scrim);
+}
+
+.select-list {
+    position: relative;
+    max-height: 82%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 0.3rem 0;
+    background: var(--gap-surface);
+    /* Top corners only: the sheet is anchored to the bottom edge, exactly like
+       the overlay panel it is drawn inside. */
+    border-radius: 18px 18px 0 0;
+    border-top: 1px solid var(--gap-line);
+}
+
+.select-option {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0.6rem var(--pico-block-spacing-horizontal);
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    color: var(--gap-text);
+    font-size: 0.92rem;
+    text-align: left;
+}
+
+.select-option[aria-selected="true"] {
+    color: var(--gap-accent);
+    font-weight: 600;
+    background: var(--gap-accent-soft);
+}
+
+/* --- Unfinished options and rows -------------------------------------------
+
+   A skill or a settings row that is not Production wears its channel's colour
+   and a pill saying which -- see `ReleaseStatus` in src/releaseStatus.ts.
+   Everything here is keyed on `data-status`, which settings.ts sets from
+   `statusFlag`: on a sheet option, on the closed dropdown row, and on the title
+   of a settings row.
+
+   After the selected rule above, and deliberately: the two have equal
+   specificity, and on a selected Alpha skill the status is the more useful of
+   the two colours. The selected row keeps its background and weight either way. */
+.select-option[data-status],
+.select-value[data-status],
+.row-title[data-status] {
+    color: var(--gap-status);
+}
+
+[data-status="alpha"] {
+    --gap-status: var(--gap-alpha);
+    --gap-status-soft: var(--gap-alpha-soft);
+}
+
+[data-status="beta"] {
+    --gap-status: var(--gap-beta);
+    --gap-status-soft: var(--gap-beta-soft);
+}
+
+/* Small caps on a tinted pill, so it reads as a stamp rather than part of the
+   name. `flex: 0 0 auto` is what keeps the name, and not this, ellipsed. */
+.select-flag {
+    flex: 0 0 auto;
+    margin-left: 0.45rem;
+    padding: 0.05rem 0.32rem;
+    border-radius: var(--gap-radius-pill);
+    background: var(--gap-status-soft);
+    color: var(--gap-status);
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    vertical-align: 0.06rem;
+}
+
+/* Already spaced by the flex gap. */
+.select-value .select-flag {
+    margin-left: 0;
+}
+
+/* The heading over a block of options. Ruled off the block above rather than
+   the one below, so the first heading sits flush with the list's own padding. */
+.select-group {
+    padding: 0.45rem var(--pico-block-spacing-horizontal) 0.2rem;
+    color: var(--gap-muted);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.select-group:not(:first-child) {
+    margin-top: 0.3rem;
+    border-top: 1px solid var(--gap-line);
+}
+
+/* --- Number stepper --------------------------------------------------------
+
+   The design's stepper is a filled square either side of a monospace value.
+   That is the coarse pair. The fine pair -- which settings.ts drops on rows
+   whose step is already 1 -- is the same square drawn quieter, so four buttons
+   do not read as one undifferentiated row. */
+
+.stepper {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.stepper .setting-number {
+    width: 3.4rem;
+    padding: 0.3rem 0.2rem;
+    text-align: center;
+    font-family: var(--pico-font-family-monospace);
+    font-size: 0.88rem;
+    font-variant-numeric: tabular-nums;
+    border: none;
+    background: transparent;
+    color: var(--gap-text);
+    /* The arrows are unusable at this size and duplicate the buttons. */
+    appearance: textfield;
+    -moz-appearance: textfield;
+}
+
+.stepper .setting-number::-webkit-inner-spin-button,
+.stepper .setting-number::-webkit-outer-spin-button {
+    appearance: none;
+    margin: 0;
+}
+
+.step {
+    min-width: 1.75rem;
+    height: 1.75rem;
+    margin: 0;
+    padding: 0 0.3rem;
+    font-size: 0.72rem;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    border: none;
+    border-radius: var(--gap-radius-control);
+    background: var(--gap-surface-2);
+    color: var(--gap-text);
+}
+
+.step:hover,
+.step:focus-visible {
+    background: var(--gap-line);
+    color: var(--gap-text);
+}
+
+.step-fine {
+    background: transparent;
+    color: var(--gap-muted);
+}
+
+.step-fine:hover,
+.step-fine:focus-visible {
+    background: var(--gap-surface-2);
+}
+
+/* --- Buttons in a row ------------------------------------------------------ */
+
+.row-buttons {
+    display: flex;
+    gap: 0.35rem;
+}
+
+.row-button {
+    margin: 0;
+    padding: 0.3rem 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border: none;
+    border-radius: var(--gap-radius-pill);
+    background: var(--gap-surface-2);
+    color: var(--gap-text);
+}
+
+.row-button:hover,
+.row-button:focus-visible {
+    background: var(--gap-line);
+    color: var(--gap-text);
+}
+
+/* An action beside a number rather than instead of it -- "Now" on the
+   between-rounds delay. Trimmed, because it shares the control column with a
+   stepper and that column is 11.5rem wide. */
+.stepper .row-buttons {
+    margin-left: 0.15rem;
+}
+
+.stepper .row-button {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+/* --- Run order -------------------------------------------------------------
+
+   A read-only card, so it is laid out as a block rather than as the
+   label-and-control row every other `.setting-row` is: a numbered schedule,
+   then one board scan as a single flowing line. */
+
+.run-order {
+    display: block;
+    padding-top: 0.3rem;
+}
+
+.run-steps {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: run-step;
+}
+
+/* Three columns -- number, job, interval -- with the detail line spanning the
+   last two, so a wrapped detail still starts under the job it belongs to. */
+.run-step {
+    display: grid;
+    grid-template-columns: 1.2rem 1fr auto;
+    align-items: baseline;
+    column-gap: 0.5rem;
+    padding: 0.4rem 0;
+    border-top: 1px solid var(--gap-row-line);
+}
+
+.run-step:first-child {
+    border-top: none;
+}
+
+.run-step::before {
+    counter-increment: run-step;
+    content: counter(run-step);
+    font-size: 0.72rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--gap-muted-2);
+}
+
+.run-what {
+    font-size: 0.85rem;
+    line-height: 1.3;
+    color: var(--gap-text);
+}
+
+.run-every {
+    justify-self: end;
+    font-size: 0.74rem;
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--gap-accent);
+}
+
+.run-detail {
+    grid-column: 2 / -1;
+    margin-top: 0.1rem;
+    font-size: 0.72rem;
+    line-height: 1.35;
+    color: var(--gap-muted);
+}
+
+.run-detail:empty {
+    display: none;
+}
+
+.run-note {
+    margin: 0.5rem 0 0;
+    font-size: 0.72rem;
+    line-height: 1.45;
+    color: var(--gap-muted);
+}
+
+/* Nothing will play. Amber, like the restart note: a state to know about, not
+   a failure. */
+.run-order-warn .run-note {
+    color: var(--gap-warn);
+}
+
+.run-flow-title {
+    margin: 0.7rem 0 0.3rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--gap-muted);
+}
+
+/* One wrapped line rather than a second table: the scan is a sequence, and a
+   sequence that reads left to right cannot be mistaken for another schedule. */
+.run-flow {
+    margin: 0 0 0.4rem;
+    padding: 0.5rem 0.6rem;
+    border-radius: var(--gap-radius-control);
+    background: var(--gap-surface-2);
+    font-size: 0.73rem;
+    line-height: 1.7;
+    color: var(--gap-text);
+}
+
+.run-chip {
+    white-space: nowrap;
+}
+
+.run-chip + .run-chip::before {
+    content: " › ";
+    color: var(--gap-accent);
+}
+
+/* --- Share panel ----------------------------------------------------------- */
+
+.share-panel {
+    padding: 0.5rem 0 0.25rem;
+}
+
+.share-panel[hidden] {
+    display: none;
+}
+
+.share-code {
+    width: 100%;
+    margin-bottom: 0.4rem;
+    font-family: var(--pico-font-family-monospace);
+    font-size: 0.75rem;
+    word-break: break-all;
+}
+
+.share-actions {
+    display: flex;
+    gap: 0.35rem;
+}
+
+.share-actions button {
+    margin: 0;
+    padding: 0.35rem 0.9rem;
+    font-size: 0.82rem;
+    border-radius: var(--gap-radius-pill);
+}
+
+.share-close {
+    --pico-background-color: transparent;
+    --pico-border-color: var(--gap-line);
+    --pico-color: var(--gap-muted);
+}
+
+.share-status {
+    margin: 0.4rem 0 0;
+    font-size: 0.78rem;
+    color: var(--gap-accent);
+    word-break: break-word;
+}
+
+.share-status:empty {
+    display: none;
+}
+
+.share-status.share-error {
+    color: var(--gap-danger);
+}
+
+/* The one place on this page that writes a colour rather than a token, and the
+   reason is that this is not decoration: a QR is only readable at full
+   contrast, so it stays black on white in both themes. The white border around
+   it is the quiet zone, which is part of the symbol.
+
+   No `width`, so the canvas is drawn at its own pixel size and the browser
+   never has to blend two modules into one pixel; `max-width` is the guard for a
+   page narrower than the code, where shrinking it would drop rows outright. */
+.share-qr {
+    display: block;
+    max-width: 100%;
+    margin: 0.6rem auto 0.2rem;
+    border-radius: 4px;
+    background: #ffffff;
+    image-rendering: pixelated;
+}
+
+.share-qr[hidden] {
+    display: none;
+}
+
+/* --- Page foot -------------------------------------------------------------
+
+   The restart note is a filled amber banner rather than a red sentence: it says
+   "this will apply later", which is information and not a failure. Red is kept
+   for Reset, which throws work away -- and Reset stays outlined, so it is never
+   the button you hit by feel. */
+
+.page-foot {
+    padding-block: var(--pico-spacing) 2rem;
+}
+
+.restart-note {
+    margin: 0 0 0.7rem;
+    padding: 0.7rem 0.85rem;
+    border-radius: 12px;
+    background: var(--gap-warn-soft);
+    color: var(--gap-warn);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.restart-note[hidden],
+.reset-button[hidden] {
+    display: none;
+}
+
+.reset-button {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0.7rem 0.9rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    background: transparent;
+    border: 1px solid var(--gap-danger);
+    border-radius: var(--gap-radius-pill);
+    color: var(--gap-danger);
+}
+
+.reset-button:hover,
+.reset-button:focus-visible {
+    background: var(--gap-danger);
+    border-color: var(--gap-danger);
+    color: var(--gap-on-accent);
+}

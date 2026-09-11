@@ -1,0 +1,8 @@
+# Anchored: unanchored `build/` also swallowed tools/build/, which is the build
+# itself rather than its output.
+/dist/
+/build/
+node_modules/
+/*.zip
+/*.zip.sha256
+debug

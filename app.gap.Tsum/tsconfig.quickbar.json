@@ -1,0 +1,64 @@
+{
+  // quickbarPage.ts is the Quick Bar's page script -- the strip the host draws
+  // above the log. It is loaded directly by quickbar.html
+  // (<script src="quickbarPage.js">) and must stay a standalone file: it is NOT part
+  // of the bundled game script (tsconfig.json), and not part of the settings
+  // page either (tsconfig.settings.json). This config emits build/quickbarPage.js.
+  //
+  // The engine half of the Quick Bar is `src/quickbar.ts`, which *is* in the
+  // game bundle. The two never share memory -- everything between them crosses
+  // `JavaScriptInterface.runScript` as a source string, exactly as the settings
+  // page's `start({...})` does.
+  "compilerOptions": {
+    "target": "ES5",
+    "lib": ["ES5", "DOM"],
+    "module": "none",
+    "outDir": "./build",
+    "rootDir": "./src",
+    // As tsconfig.settings.json: nothing reads build/quickbarPage.js, and every byte
+    // of it is inlined into dist/quickbar.html.
+    "removeComments": true,
+    "newLine": "lf",
+    // Stricter than the settings page, which is a direct port of the original
+    // settings.js and still leans on implicit any. This file is new, so it has
+    // no such debt to carry.
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmitOnError": false,
+    "ignoreDeprecations": "6.0"
+  },
+  "files": [
+    // Where SettingKey and SkillType come from -- the same list the game bundle
+    // and the settings page are checked against.
+    "src/shared.d.ts",
+    // Erased at compile time, so the page pays nothing for sharing the event
+    // vocabulary it writes records under.
+    "src/logEvents.ts",
+    // The bridge and StorageKey: what a page in one of the host's WebViews can
+    // see. Shared with tsconfig.settings.json.
+    "src/settings.d.ts",
+    // The UI string vocabulary, erased at compile time as logEvents.ts is.
+    "src/strings.d.ts",
+    // The i18n runtime and one catalogue per language, shared with the settings
+    // page. Both pages compile and load the same set, so a skill name or a
+    // strip label is written once. English first: it is the fallback.
+    "src/i18n.ts",
+    "src/uiEn.ts",
+    "src/uiZhTw.ts",
+    // What this channel is allowed to offer, and how an unfinished thing is
+    // badged. Shared with the settings page. Emits build/releaseStatus.js,
+    // loaded before the list that reads it.
+    "src/releaseStatus.ts",
+    // The Skill Type dropdown's entries, shared with the settings page. Emits
+    // build/skillOptions.js, which quickbar.html loads before quickbarPage.js.
+    "src/skillOptions.ts",
+    // The Bubble Strategy dropdown's entries, shared for the same reason and in
+    // the same shape. Emits build/bubbleOptions.js.
+    "src/bubbleOptions.ts",
+    // The named-configuration store, shared with the settings page: the strip
+    // lists the presets and applies one mid-run. Emits build/presets.js, which
+    // quickbar.html loads before quickbarPage.js.
+    "src/presets.ts",
+    "src/quickbarPage.ts"
+  ]
+}

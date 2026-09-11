@@ -1,0 +1,32 @@
+{
+  "Game": "Tsum Tsum",
+  "Publisher": "Official GAP",
+  "Catalogue": "../../game-automation-catalogue/Official/LineTsumTsum",
+  "DevicePath": "/sdcard/Download/GameAutomationPlatform",
+  "DefaultChannel": "Alpha",
+  "MessageMaxChars": 2000,
+  "HistoryLimit": 5,
+  "Channels": {
+    "Alpha": {
+      "Name": "Tsum Tsum Script - ALPHA",
+      "Archive": "TsumTsum-Alpha",
+      "Directory": "Alpha",
+      "Note": "_USE WITH CAUTION_",
+      "Status": 0
+    },
+    "Beta": {
+      "Name": "Tsum Tsum Script - BETA",
+      "Archive": "TsumTsum-Beta",
+      "Directory": "Beta",
+      "Note": "_Testing build -- please report anything odd._",
+      "Status": 1
+    },
+    "Production": {
+      "Name": "Tsum Tsum Script",
+      "Archive": "TsumTsum",
+      "Directory": "Production",
+      "Note": "",
+      "Status": 2
+    }
+  }
+}

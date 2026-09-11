@@ -1,0 +1,144 @@
+{
+  "_comment": [
+    "The documentation clip library, read and written by the development tools' clip cutter.",
+    "",
+    "One entry per feature a reader is meant to understand. `bracket` names the",
+    "moment by the event the script already writes, never by a timestamp, so any",
+    "take holding that moment can be cut from and a re-recording invalidates",
+    "nothing. `shows` is what makes the clip stale when it changes; `usedBy` is",
+    "the document that embeds it, and the cutter's check holds both to it.",
+    "",
+    "Event names are src/logEvents.ts (the log) and src/scriptEvents.ts (the",
+    "emitted five). Anything in either is bracketable."
+  ],
+  "defaults": {
+    "surface": "device",
+    "before": 1.5,
+    "after": 4,
+    "fps": 30,
+    "scale": 540,
+    "formats": ["mp4", "webp"],
+    "maxSeconds": 30
+  },
+  "clips": [
+    {
+      "id": "run-starts",
+      "title": "Starting a run from the overlay",
+      "bracket": { "event": "run.start", "before": 4, "after": 6 },
+      "shows": "src/index.ts"
+    },
+    {
+      "id": "round-plays",
+      "title": "One round, start to finish",
+      "bracket": { "from": "play.gameStart", "to": "play.gameOver", "before": 2, "after": 3 },
+      "maxSeconds": 90,
+      "shows": "src/play.ts"
+    },
+    {
+      "id": "chain-drawn",
+      "title": "The planner finds a chain and draws it",
+      "bracket": { "event": "board.pathDone", "before": 1, "after": 2 },
+      "maxSeconds": 8,
+      "shows": ["src/pathfinding.ts", "src/board.ts"]
+    },
+    {
+      "id": "skill-fires",
+      "title": "A skill activates",
+      "bracket": { "event": "skill.use", "before": 2, "after": 6 },
+      "shows": "src/skills/skillCore.ts"
+    },
+    {
+      "id": "skill-coronation-elsa",
+      "title": "Coronation Elsa freezes the board and clears it in one pass",
+      "bracket": {
+        "event": "skill.use",
+        "match": { "skill": "elsa_coronation" },
+        "before": 2,
+        "after": 12
+      },
+      "maxSeconds": 20,
+      "shows": "src/skills/coronationElsa.ts"
+    },
+    {
+      "id": "skill-gaston",
+      "title": "Gaston snakes one chain down the pile",
+      "bracket": {
+        "event": "skill.use",
+        "match": { "skill": "gaston" },
+        "before": 2,
+        "after": 10
+      },
+      "shows": "src/skills/gaston.ts"
+    },
+    {
+      "id": "fever-time",
+      "title": "Fever time",
+      "bracket": { "from": "fever.start", "to": "fever.end", "before": 1, "after": 2 },
+      "maxSeconds": 25,
+      "shows": "src/fever.ts"
+    },
+    {
+      "id": "lorcana-transforms",
+      "title": "The Lorcana card transforms the board",
+      "bracket": { "event": "lorcana.transformed", "before": 3, "after": 8 },
+      "shows": "src/lorcana.ts"
+    },
+    {
+      "id": "bubbles-popped",
+      "title": "Bubbles saved for a chain rather than popped alone",
+      "bracket": { "event": "bubble.popped", "before": 2, "after": 3 },
+      "shows": "src/board.ts"
+    },
+    {
+      "id": "mailbox-sweep",
+      "title": "Collecting the mailbox",
+      "bracket": {
+        "from": "gifts.checkUnreceived",
+        "to": "gifts.completed",
+        "before": 2,
+        "after": 3
+      },
+      "maxSeconds": 45,
+      "shows": "src/mail.ts"
+    },
+    {
+      "id": "hearts-sweep",
+      "title": "Sending hearts down the friend list",
+      "bracket": {
+        "from": "hearts.goToSelf.start",
+        "to": "hearts.listEnd",
+        "before": 2,
+        "after": 3
+      },
+      "maxSeconds": 45,
+      "shows": "src/hearts.ts"
+    },
+    {
+      "id": "box-buying",
+      "title": "Buying boxes between rounds",
+      "bracket": { "from": "box.start", "to": "box.end", "before": 2, "after": 3 },
+      "maxSeconds": 45,
+      "shows": "src/boxes.ts"
+    },
+    {
+      "id": "level-cap-sweep",
+      "title": "Raising level caps across the collection",
+      "bracket": { "from": "unlock.cardsRead", "to": "unlock.end", "before": 2, "after": 3 },
+      "maxSeconds": 45,
+      "shows": "src/levelCap.ts"
+    },
+    {
+      "id": "dead-scan-recovery",
+      "title": "The loop notices a chain the game refused, and moves on",
+      "bracket": { "event": "board.deadScan", "before": 4, "after": 4 },
+      "shows": "src/play.ts"
+    },
+    {
+      "id": "app-restart",
+      "title": "The script restarts the game and finds its way back",
+      "bracket": { "from": "app.restarting", "to": "app.restarted", "before": 2, "after": 4 },
+      "maxSeconds": 60,
+      "shows": "src/appLifecycle.ts"
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+{
+  "note": "Box Buying on a 12-hour schedule and asked for now, with no round in the way.",
+  "settings": { "buyBoxHoursWait": 12, "buyBoxesFirst": true }
+}

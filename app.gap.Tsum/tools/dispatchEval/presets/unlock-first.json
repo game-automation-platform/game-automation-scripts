@@ -1,0 +1,5 @@
+{
+  "note": "The Now button started the run, and a round is already on screen for the first two looks: the sweep stands aside twice, then goes, and the scheduled sweep is not due at start.",
+  "settings": { "unlockLevelsFirst": true },
+  "standAside": { "autoUnlockLevel": 2 }
+}

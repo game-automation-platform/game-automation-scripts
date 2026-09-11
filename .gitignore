@@ -1,0 +1,5 @@
+# Git Bash crash dumps. One got committed once; not again.
+*.stackdump
+
+# Editor state.
+.vscode/

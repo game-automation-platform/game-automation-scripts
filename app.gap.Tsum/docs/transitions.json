@@ -1,0 +1,59 @@
+{
+  "note": "Observed page-to-page transitions, harvested from tsum_record/pageHistory by the development tools. Generated data, not hand-authored: see tools/runtime/transitions.js. `count` is how many times the pair has been observed across all harvests, which is a confidence signal rather than a statistic -- the on-device window is only `pageHistoryDepth` visits deep.",
+  "harvests": 1,
+  "updated": "2026-08-25",
+  "lastListing": [
+    "00000_ProfilePage.png",
+    "00081_StartPage.png",
+    "00082_GamePlaying.png",
+    "00083_unknown.png",
+    "00084_GamePlaying.png",
+    "00085_unknown.png",
+    "00086_GamePlaying.png",
+    "00087_unknown.png",
+    "00088_GamePlaying.png",
+    "00089_unknown.png",
+    "00090_GamePlaying.png",
+    "00091_unknown.png",
+    "00092_GamePlaying.png",
+    "00093_unknown.png",
+    "00094_GamePlaying.png",
+    "00095_unknown.png",
+    "00096_GamePlaying.png",
+    "00097_unknown.png",
+    "00098_GamePlaying.png",
+    "00099_unknown.png",
+    "00100_TsumLevelUp.png"
+  ],
+  "sessions": [],
+  "transitions": [
+    {
+      "from": "GamePlaying",
+      "to": "unknown",
+      "count": 9,
+      "firstSeen": "2026-08-25",
+      "lastSeen": "2026-08-25"
+    },
+    {
+      "from": "StartPage",
+      "to": "GamePlaying",
+      "count": 1,
+      "firstSeen": "2026-08-25",
+      "lastSeen": "2026-08-25"
+    },
+    {
+      "from": "unknown",
+      "to": "GamePlaying",
+      "count": 8,
+      "firstSeen": "2026-08-25",
+      "lastSeen": "2026-08-25"
+    },
+    {
+      "from": "unknown",
+      "to": "TsumLevelUp",
+      "count": 1,
+      "firstSeen": "2026-08-25",
+      "lastSeen": "2026-08-25"
+    }
+  ]
+}

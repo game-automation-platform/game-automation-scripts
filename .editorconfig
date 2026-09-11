@@ -1,0 +1,7 @@
+# Stops an editor putting back the CRLF that .gitattributes just took out.
+root = true
+
+[*]
+end_of_line = lf
+charset = utf-8
+insert_final_newline = true

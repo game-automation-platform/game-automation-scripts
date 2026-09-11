@@ -1,0 +1,22 @@
+# Line endings are LF everywhere: in the repository and in the working tree,
+# Windows checkouts included. Git, node, python and the shell tools all write
+# LF, so a CRLF working tree meant every one-line edit came back as a
+# whole-file diff, `grep 'foo$'` quietly matched nothing, and build.sh carried
+# a stray \r into the end of every variable it set.
+* text=auto eol=lf
+
+# The tsum portrait library is generated, compared byte for byte by the tool
+# that writes it, and copied verbatim into dist/ and onto the device. A CRLF
+# checkout on Windows would make that comparison fail on a clean clone and grow
+# every line by a byte on the way to the phone, so it stays LF everywhere.
+*.dat text eol=lf
+
+# Binary: never end-of-line converted, never diffed as text.
+*.png binary
+*.jpg binary
+*.zip binary
+
+# Documentation media. Same rule as the images above.
+*.mp4 binary
+*.webp binary
+*.mkv binary

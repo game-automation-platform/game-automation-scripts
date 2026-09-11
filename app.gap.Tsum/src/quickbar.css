@@ -1,0 +1,813 @@
+/*
+ * The Quick Bar's whole appearance. Editing this file is the way to change how
+ * the strip looks; quickbar.js only reads and writes values.
+ *
+ * Sized in CSS pixels, which are dp here -- the page is loaded with
+ * `width=device-width` and the host leaves textZoom at 100. So the numbers below
+ * are the same numbers `BarTheme.Panel.quickBarHeight` is written in.
+ *
+ * The host sizes the *window* and this sizes what is drawn in it, so the two
+ * have to agree on the height -- and it is no longer a constant. The strip
+ * shares its band with the status line, which takes its height out of the
+ * strip's, so the host pushes the number it settled on and `--qb-h` is where it
+ * lands. Everything vertical here is a count of `--qb-vs`, the ratio of that
+ * number to the 62 this was designed at, which is what makes the strip's
+ * contents fit whatever band they are given.
+ *
+ * Pico is deliberately absent. This page is one strip, and every rule it needs
+ * is here.
+ */
+
+:root {
+  /*
+   * The strip's own height, as a bare number of CSS px. The window is this tall
+   * unless a sheet is open, and quickbarPage.ts overwrites it on `:root` from
+   * two places that agree -- what the host pushes through `onGapState`, and the
+   * viewport it measures on every resize -- because the strip shares its band
+   * with the status line, which takes its height out of this one. 62 is the
+   * design size and the fallback until either of those lands.
+   *
+   * Bare rather than a length because everything below needs it both ways: as
+   * the height itself, and as the *ratio* to the design size. `calc(62px / 62)`
+   * is 1px, not 1, so a length could not give the second.
+   */
+  --qb-h: 62;
+  --qb-height: calc(var(--qb-h) * 1px);
+
+  /*
+   * How much of the design height the host actually gave: 1 at 62, less below.
+   * Every vertical count is written against it -- the rows, the gaps between
+   * them, the strip's own padding -- so the block keeps its proportions in
+   * whatever band it is handed. Floored at 0.5, which is where the host stops
+   * too: past that a chip is not small, it is unhittable.
+   */
+  --qb-vs: clamp(0.5, calc(var(--qb-h) / 62), 1);
+
+  --qb-row: calc(25px * var(--qb-vs));
+  /* The strip's top and bottom padding, and the gap between its two rows. */
+  --qb-vpad: calc(4px * var(--qb-vs));
+
+  /*
+   * The strip's design pixel, and what the window's size changes.
+   * Every width, gap, glyph and type size below is written as a count of these
+   * rather than in px, so the whole block scales with the window it is drawn
+   * in: full size at 440dp -- the width the two control rows, the Report
+   * button and the coin readout need at their drawn size -- and shrinking with
+   * anything narrower,
+   * down to 72%, which still fits them all on a 320dp screen and is as small as
+   * they go. So nothing runs off the edge of a phone, and nothing is blown up
+   * on a tablet.
+   *
+   * The viewport is the container for the width half: the host's window is
+   * MATCH_PARENT and the WebView fills it, so 100vw is the strip's own width.
+   * A short band pulls it down too, but on its own gentler floor of 82%: type
+   * has to stay readable in a band that has nearly halved, and the room for it
+   * comes from the dense rules at the foot of this file -- which drop a whole
+   * line out of the chips -- rather than from shrinking the type twice over.
+   */
+  --qb-u: calc(clamp(0.72px, 0.2273vw, 1px) * clamp(0.82, var(--qb-vs), 1));
+
+  /* The host's panel palette, so the strip and the log above it read as one. */
+  --qb-bg: rgba(102, 102, 102, 0.678);
+  --qb-ink: #dadee5;
+  --qb-muted: #b9c8db;
+  --qb-chip: #24271b;
+  --qb-chip-edge: #333b45;
+  --qb-on: #21bfa0;
+  --qb-accent: #e0af3b;
+
+  /* Not paused: the affordances go quiet, never the values. */
+  --qb-off: #7b8797;
+  --qb-chip-edge-off: #2b323b;
+  --qb-radius: 7px;
+
+  /*
+   * Line height for any text drawn inside `overflow: hidden` -- the skill name
+   * and the sheet's options. The page's own is 1, which is the em box and so is
+   * shorter than the glyphs: a descender ("Cpt. Lightyear") falls outside the
+   * line box, and clipping takes it off. 1.4 clears the tallest of the stacked
+   * fonts' ascent-plus-descent with room to spare.
+   *
+   * The chips in the strip do not use it: their text is centred in a box the
+   * host's row height gives, which is already taller than any of this.
+   */
+  --qb-lh: 1.4;
+
+  /* Inside a column, and between the columns -- both scale with the rest. */
+  --qb-gap: calc(4 * var(--qb-u));
+  --qb-colgap: calc(1 * var(--qb-u));
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  overflow: hidden;
+  font: 500 11px/1 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* Separate from the shorthand so the px above stays the fallback size. */
+  font-size: calc(11 * var(--qb-u));
+  color: var(--qb-ink);
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/*
+ * Bottom-anchored: while a sheet is open the host makes the window taller, and
+ * the extra room has to appear *above* the strip rather than under it -- the
+ * strip's own bottom edge is what sits on the screen's.
+ */
+body {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.qb {
+  display: flex;
+  align-items: center;
+  /* The block is only as wide as its controls need; a screen with more sits it
+     in the middle rather than stretching anything to the edges. */
+  justify-content: center;
+  gap: var(--qb-colgap);
+  /*
+   * `100%` is the window; `--qb-height` is the band inside it, which is smaller
+   * only while a sheet is open. Capped at the window so a height the page was
+   * told wrong cannot draw the strip off the top of it -- quickbarPage.ts
+   * measures the viewport for the same reason.
+   */
+  height: min(var(--qb-height), 100%);
+  padding: var(--qb-vpad) var(--qb-colgap);
+  background: var(--qb-bg);
+  border-top: 1px solid #66414853;
+}
+
+/* --- the controls ------------------------------------------------------- */
+
+/*
+ * The grid and the Report button beside it, at their content's width. `--qb-u`
+ * shrinks everything together as the screen narrows, and the grid's last
+ * column gives way after it has bottomed out, because every control has to be
+ * on screen -- one you have to scroll to is one you will not notice is there.
+ * The scroll is the last resort under that, so a screen narrower than any
+ * phone loses nothing.
+ */
+.qb-controls {
+  flex: 0 1 auto;
+  min-width: 0;
+  display: flex;
+  gap: var(--qb-colgap);
+  overflow: auto hidden;
+}
+
+/*
+ * Three columns, two rows. The first two columns are `auto`: as wide as the
+ * wider of their two rows and no wider, so the level-and-items cluster sets
+ * the width the skill name gets, and the chain stepper sets the scan
+ * stepper's. The third is as wide as the longer of its two names, or as wide
+ * as the strip has left if that is less -- floored at the wide chip's
+ * minimum, because a name that ellipsises to two letters is no better than no
+ * chip.
+ *
+ * No `min-width: 0` on the grid itself: its minimum is what its columns need,
+ * so when the strip cannot fit it the controls scroll rather than the grid
+ * being drawn over the Report button.
+ */
+.qb-grid {
+  flex: 0 1 auto;
+  display: grid;
+  grid-template-columns: auto auto minmax(calc(56 * var(--qb-u)), max-content);
+  grid-template-rows: var(--qb-row) var(--qb-row);
+  /* The block's one vertical gap: this is where the two rows stack. */
+  gap: var(--qb-vpad) var(--qb-gap);
+}
+
+/*
+ * A cell is exactly as wide as its column, and its control fills it. No
+ * `min-width: 0` here: a cell's content is what gives an `auto` column its
+ * minimum, and a cell that could be squeezed to nothing would let the column
+ * be squeezed under its stepper.
+ */
+.qb-cell {
+  display: flex;
+  align-items: center;
+  /* The row's own height: the steppers and the select are `height: 100%`. */
+  height: var(--qb-row);
+}
+
+/* The third column's cells may be narrower than their name -- that is what
+   the ellipsis is for -- so the column can come down to its floor. */
+.qb-cell-wide { min-width: 0; }
+
+/*
+ * The skill level and the two bonus chips, side by side in one grid cell.
+ * Each is its own width and they never stretch: this cluster is what sizes
+ * the first column, so there is nothing left over to stretch into.
+ */
+.qb-cluster {
+  display: flex;
+  align-items: center;
+  gap: var(--qb-gap);
+}
+
+.qb-cluster .qb-cell { flex: 0 0 auto; }
+
+.qb-label {
+  flex: 0 0 auto;
+  color: var(--qb-muted);
+  font-size: calc(10 * var(--qb-u));
+  letter-spacing: 0.02em;
+}
+
+/* --- stepper ------------------------------------------------------------ */
+
+/*
+ * Name over number, buttons either side. The buttons are a fixed 18 of the
+ * strip's pixels each and the readout between them is its own text, so the
+ * chip is as wide as the three need -- or as wide as the stepper it shares a
+ * column with, which is the readout's few pixels of give.
+ *
+ * The button's 18 is a `width`, not a bare `flex-basis`: the device's WebView
+ * (Chromium 110) sizes a flex container's intrinsic width from what its items
+ * *contain*, and a basis alone counts for nothing there. With a basis only,
+ * the column was measured at the glyphs' width, the chip was laid out at that,
+ * and the `+` was clipped clean off.
+ */
+.qb-stepper {
+  flex: 1 0 auto;
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+  border-radius: var(--qb-radius);
+  background: var(--qb-chip);
+  border: 1px solid var(--qb-chip-edge);
+  overflow: hidden;
+}
+
+.qb-step {
+  flex: 0 0 auto;
+  width: calc(18 * var(--qb-u));
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--qb-ink);
+  font: inherit;
+  font-size: calc(14 * var(--qb-u));
+  line-height: 1;
+}
+
+.qb-step:active { background: #2b323b; }
+
+/* The name over its number, between the two buttons. */
+.qb-readout {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+}
+
+/* 8 + 1 + 12 = 21, inside a 23px chip. Any larger and the pair stops fitting. */
+.qb-name {
+  font-size: calc(8 * var(--qb-u));
+  line-height: 1;
+  color: var(--qb-muted);
+  letter-spacing: 0.02em;
+}
+
+.qb-value {
+  min-width: calc(16 * var(--qb-u));
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-size: calc(12 * var(--qb-u));
+  line-height: 1;
+}
+
+/*
+ * One line each, ending in an ellipsis where a box is narrower than its text.
+ * In the stepper that never happens -- the chip is as wide as the pair -- but
+ * the same two rules serve the wide chips, where it does, and the dense row,
+ * where the name is what gives way.
+ *
+ * No `max-width: 100%`: a percentage of a box that is itself sized by its
+ * content is cyclic, and the WebView resolves it to nothing while measuring,
+ * which is one more way a chip comes out narrower than what it holds.
+ */
+.qb-name,
+.qb-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- toggle ------------------------------------------------------------- */
+
+/*
+ * A chip that says its own name, rather than a label and a switch beside it:
+ * lit teal is on, dark and muted is off. Same shape as the steppers and the
+ * select, so the row reads as one kind of thing. As wide as its word.
+ */
+.qb-toggle {
+  flex: 0 0 auto;
+  height: 100%;
+  padding: 0 calc(7 * var(--qb-u));
+  border: 1px solid var(--qb-chip-edge);
+  border-radius: var(--qb-radius);
+  background: var(--qb-chip);
+  color: var(--qb-muted);
+  font: inherit;
+  font-size: calc(11 * var(--qb-u));
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.qb-toggle:active { background: #2b323b; }
+
+.qb-toggle[aria-checked="true"] {
+  background: #12362f;
+  border-color: var(--qb-on);
+  color: var(--qb-on);
+}
+
+/* --- the wide chips: the preset and the bubble strategy ------------------ */
+
+/*
+ * The select's chip with a name stacked over its value rather than a bare label.
+ * Both controls in the third column wear it, and for the same reason: their
+ * value is a *word*, and a word with nothing over it says nothing about what it
+ * is -- "Coin farm" and "All mid" are both meaningless without their label.
+ *
+ * A width of its own: a name is what these chips are for, and one squeezed to an
+ * ellipsis would be a chip that cannot be read at a glance, which is the whole
+ * budget the strip is drawn against.
+ */
+.qb-wide {
+  flex: 1 1 auto;
+  min-width: calc(56 * var(--qb-u));
+  padding: 0 calc(4 * var(--qb-u)) 0 calc(8 * var(--qb-u));
+}
+
+.qb-wide:active { background: #2b323b; }
+
+/*
+ * Left-aligned, unlike the steppers': it is a label and a name, not a number.
+ * Shrinks, so the name inside can ellipsise -- and the name's box is stretched
+ * to the readout's width rather than clamped to it with `max-width: 100%`,
+ * because a nowrap line under fit-content is never narrower than its text and
+ * the percentage was the only thing making the ellipsis appear (see .qb-name).
+ */
+.qb-wide-readout {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  align-items: stretch;
+  gap: calc(2 * var(--qb-u));
+}
+
+.qb-wide-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: calc(12 * var(--qb-u));
+  /* As `.qb-select-value`: the clip is on the line box, so it has to clear the
+     descenders of whatever the user called their preset. */
+  line-height: var(--qb-lh);
+}
+
+/* Nothing loaded is a dash, and a dash is not a reading -- keep it quiet. */
+.qb-preset-value[data-empty="true"] { color: var(--qb-muted); }
+
+/* --- report ------------------------------------------------------------- */
+
+/*
+ * One button over both rows, at the end of the controls, as narrow as its word.
+ * It never shrinks: this is the one control pressed when something has already
+ * gone wrong, and a screen narrow enough to squeeze it is exactly the kind of
+ * device the report would be about.
+ *
+ * Deliberately quiet -- the same chip fill as the rest, with the glyph in the
+ * warning colour rather than the whole button. It is not an alert and it is not
+ * an action anyone should feel steered towards; it is there for the moment it
+ * is wanted and reads as furniture until then.
+ *
+ * `height: auto` and `align-items: stretch` against `.qb-cell`'s row height and
+ * centring, so the button's `height: 100%` means both rows and not one.
+ */
+.qb-cell-tall {
+  flex: 0 0 auto;
+  height: auto;
+  align-items: stretch;
+}
+
+.qb-report {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: calc(2 * var(--qb-u));
+  height: 100%;
+  padding: 0 calc(3 * var(--qb-u));
+  border: 1px solid var(--qb-chip-edge);
+  border-radius: var(--qb-radius);
+  background: var(--qb-chip);
+  color: var(--qb-muted);
+  font: inherit;
+}
+
+.qb-report:active { background: #2b323b; }
+
+.qb-report-glyph {
+  flex: 0 0 auto;
+  width: calc(15 * var(--qb-u));
+  height: calc(15 * var(--qb-u));
+  fill: none;
+  stroke: var(--qb-accent);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.qb-report-label { white-space: nowrap; }
+
+/* Saved: the chip says so for a few seconds rather than a toast over the game. */
+.qb-report[data-said="saved"] {
+  border-color: var(--qb-on);
+  color: var(--qb-on);
+}
+
+.qb-report[data-said="saved"] .qb-report-glyph { stroke: var(--qb-on); }
+
+/*
+ * Live by the run, not by the pause: the host keeps this one chip touchable
+ * while the script plays (quickbarPage.ts, `qbNameHotspot`), so it keeps its
+ * full edge and glyph where the chips around it recede. Only with no run at
+ * all does it go quiet with them.
+ */
+.qb-report:disabled { border-color: var(--qb-chip-edge-off); }
+.qb-report:disabled .qb-report-glyph { stroke: var(--qb-off); }
+
+/* --- skill select ------------------------------------------------------- */
+
+.qb-select {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: calc(2 * var(--qb-u));
+  height: 100%;
+  padding: 0 calc(4 * var(--qb-u)) 0 calc(7 * var(--qb-u));
+  border: 1px solid var(--qb-chip-edge);
+  border-radius: var(--qb-radius);
+  background: var(--qb-chip);
+  color: var(--qb-ink);
+  font: inherit;
+  font-size: calc(11 * var(--qb-u));
+}
+
+.qb-select-value {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+  /* The ellipsis needs `overflow: hidden`, and that clips the line box rather
+     than the glyphs -- so the box has to be taller than the type or a descender
+     is cut off. `--qb-lh` is that height, wherever a name is clipped. */
+  line-height: var(--qb-lh);
+}
+
+.qb-caret {
+  flex: 0 0 auto;
+  width: calc(13 * var(--qb-u));
+  height: calc(13 * var(--qb-u));
+  fill: none;
+  stroke: var(--qb-muted);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+
+/* --- the coin readout --------------------------------------------------- */
+
+/*
+ * A two-column table in a chip of its own on the strip's right edge: the names
+ * down the left, the figures down the right on one edge, three rows ruled apart.
+ * The block is the strip's one piece of pure reading, so it is laid out to be
+ * scanned down rather than across -- base against final is the comparison worth
+ * making, and that wants the two figures in a column with their digits aligned.
+ */
+.qb-stats {
+  flex: 0 0 auto;
+  /*
+   * Separate rather than collapsed: `border-radius` on a table is only honoured
+   * in the separate model, and the rules between rows are drawn on the cells
+   * below anyway -- a border on a `<tr>` is not painted here.
+   */
+  border-collapse: separate;
+  border-spacing: 0;
+  /*
+   * Half the strip's padding above and below: three ruled rows and a border are
+   * ~52 of the 54px the band leaves at full size, and the slack that buys is
+   * what keeps a descender off the hairline under it.
+   */
+  padding: calc(var(--qb-vpad) / 2) calc(7 * var(--qb-u));
+  background: var(--qb-chip);
+  border: 1px solid var(--qb-chip-edge);
+  border-radius: 10px;
+}
+
+/* The hairline between two readings, on the cells for the reason above. */
+.qb-stat + .qb-stat > * { border-top: 1px solid var(--qb-chip-edge); }
+
+/*
+ * A `<th>` is centred and bold by default and this is neither: it is the quiet
+ * half of the row, and the figure beside it is what the eye is going to.
+ */
+.qb-stat-label {
+  padding: calc(1px * var(--qb-vs)) calc(8 * var(--qb-u)) calc(1px * var(--qb-vs)) 0;
+  color: var(--qb-muted);
+  font-size: calc(9 * var(--qb-u));
+  font-weight: inherit;
+  letter-spacing: 0.02em;
+  text-align: left;
+  white-space: nowrap;
+}
+
+/* Wide enough for the longest coin figure, at whatever size the strip is. */
+.qb-stat-value {
+  min-width: calc(44 * var(--qb-u));
+  padding: calc(1px * var(--qb-vs)) 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-size: calc(12 * var(--qb-u));
+  color: var(--qb-accent);
+}
+
+/* A count of rounds, not coins: same column, but not one of the two figures. */
+.qb-stat-rounds .qb-stat-value {
+  color: var(--qb-muted);
+  font-size: calc(10 * var(--qb-u));
+}
+
+/* --- now, or at the next round ------------------------------------------ */
+
+/*
+ * `data-when` is put on a cell by quickbarPage.ts while a round is being played,
+ * and it answers the one question the strip could not: *if I change this now,
+ * when does it happen?* Some of these settings the play loop re-reads every scan
+ * and some the round was dealt under and cannot take back -- see `LiveSettings`
+ * in src/quickbar.ts, which is where the engine decides it and where the list
+ * comes from.
+ *
+ * A bar along the chip's inside bottom edge, as an inset shadow rather than a
+ * border: the chips are already bordered, `box-sizing` would have to give the
+ * width back from somewhere, and a colour change on the border itself collides
+ * with the toggle's own lit edge.
+ *
+ * Teal is the strip's "live" colour already -- the top edge wears it while the
+ * script is paused -- and amber is its "worth noting" one, off the coin
+ * readout. So the two bars say the same thing the rest of the palette does.
+ *
+ * Only while a round is on: between rounds the whistle is seconds away and
+ * everything effectively lands now, so quickbarPage.ts takes the attribute off
+ * and there is nothing to explain.
+ */
+.qb-cell[data-when] .qb-stepper,
+.qb-cell[data-when] .qb-toggle,
+.qb-cell[data-when] .qb-select {
+  box-shadow: inset 0 calc(-2 * var(--qb-u)) 0 var(--qb-when, transparent);
+}
+
+.qb-cell[data-when="now"] { --qb-when: var(--qb-on); }
+.qb-cell[data-when="nextRound"] { --qb-when: var(--qb-accent); }
+
+/*
+ * The preset chip is not one setting: picking one moves settings of both kinds
+ * at once, most of them now and the round's own setup at the whistle. So its bar
+ * is both colours rather than a claim it cannot make.
+ *
+ * A gradient rather than the inset shadow above, which takes one colour. It
+ * layers over the chip's own `background` colour, which stays where it is.
+ */
+.qb-cell[data-when="both"] .qb-select {
+  background-image: linear-gradient(90deg, var(--qb-on) 50%, var(--qb-accent) 50%);
+  background-repeat: no-repeat;
+  background-position: bottom;
+  background-size: 100% calc(2 * var(--qb-u));
+}
+
+/*
+ * The name goes with the bar, because the bar alone is a colour and colour alone
+ * is not a signal everyone can read. On a toggle there is no separate name -- the
+ * chip is its own label -- so the bar under it is all there is, and the pair of
+ * chips it applies to (+Coin, 5>4) are both round-setup settings that always
+ * wear the same one.
+ */
+.qb-cell[data-when="nextRound"] .qb-name { color: var(--qb-accent); }
+
+/* Not paused is not the moment to be asking about it: the whole strip is dead,
+   and two colours of affordance on a dead strip is noise. */
+body:not([data-state="paused"]) .qb-cell[data-when] .qb-stepper,
+body:not([data-state="paused"]) .qb-cell[data-when] .qb-toggle,
+body:not([data-state="paused"]) .qb-cell[data-when] .qb-select { box-shadow: none; }
+
+body:not([data-state="paused"]) .qb-cell[data-when="both"] .qb-select {
+  background-image: none;
+}
+
+body:not([data-state="paused"]) .qb-cell[data-when="nextRound"] .qb-name {
+  color: var(--qb-muted);
+}
+
+/* --- a short band ------------------------------------------------------- */
+
+/*
+ * `data-dense` is set by quickbarPage.ts from the height the host pushed, and it
+ * is the one thing about this page that a scale factor could not do: below about
+ * 48px a chip's row is shorter than a name stacked over its number, whatever the
+ * type size, so the stack has to become a line.
+ *
+ * Nothing is dropped. The name shrinks and moves beside the number rather than
+ * above it, which is the only part of the strip that was spending height on
+ * layout instead of on glyphs -- and the strip is a thing you read at a glance,
+ * so losing the name would cost more than losing the height did.
+ */
+body[data-dense="true"] .qb-readout {
+  flex-direction: row;
+  gap: calc(3 * var(--qb-u));
+}
+
+/* Side by side, the name is what a squeezed chip gives up first. */
+body[data-dense="true"] .qb-readout .qb-name {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+body[data-dense="true"] .qb-value { min-width: calc(13 * var(--qb-u)); }
+
+/* Side by side in a chip that grows, the wide readout keeps its left edge and
+   sits its label on the name's baseline rather than centring the pair. */
+body[data-dense="true"] .qb-wide-readout {
+  justify-content: flex-start;
+  align-items: baseline;
+}
+
+/*
+ * The Report button goes the other way and drops its word, which is the one
+ * place a name is worth losing: the triangle says the same thing in a fraction
+ * of the width, and this chip's whole job is to still be on screen in a band
+ * that has nearly halved.
+ */
+body[data-dense="true"] .qb-report-label { display: none; }
+body[data-dense="true"] .qb-report-glyph {
+  width: calc(17 * var(--qb-u));
+  height: calc(17 * var(--qb-u));
+}
+
+/*
+ * The coin block is three rows in the same band, so it is the other place the
+ * height actually binds: its type comes down with `--qb-vs` itself rather than
+ * with the floored unit the chips use, because a readout that overflows its
+ * track is clipped by the strip rather than merely tight.
+ */
+body[data-dense="true"] .qb-stat-label { font-size: calc(9 * var(--qb-u) * var(--qb-vs)); }
+body[data-dense="true"] .qb-stat-value { font-size: calc(12 * var(--qb-u) * var(--qb-vs)); }
+body[data-dense="true"] .qb-stat-rounds .qb-stat-value { font-size: calc(10 * var(--qb-u) * var(--qb-vs)); }
+
+/* --- not paused: readable, but not live --------------------------------- */
+
+/*
+ * The controls are live only while the script is paused. The window itself is
+ * untouchable at every other time -- that is what actually stops a tap, because
+ * a touchable overlay would also swallow the ones the script injects -- and
+ * these rules are what say so.
+ *
+ * Nothing is covered or faded out: the strip is meant to be left up for a whole
+ * run, so every value stays at full ink and stays worth glancing at. Only the
+ * affordances go quiet -- the chip edges recede and the arrows and caret dim --
+ * which is the difference between "you cannot read this" and "you cannot press
+ * this". quickbarPage.ts sets each button's `disabled` from the same fact, so
+ * the control refuses the tap as well as looking like it would. The Report chip
+ * is the one control left out of these rules -- see *report* above.
+ */
+body:not([data-state="paused"]) .qb-stepper,
+body:not([data-state="paused"]) .qb-select,
+body:not([data-state="paused"]) .qb-toggle { border-color: var(--qb-chip-edge-off); }
+
+body:not([data-state="paused"]) .qb-step { color: var(--qb-off); }
+body:not([data-state="paused"]) .qb-caret { stroke: var(--qb-off); }
+
+/*
+ * The toggle keeps its ON tint -- checked or not is a reading, not an
+ * affordance -- and only its edge recedes with the rest.
+ */
+body:not([data-state="paused"]) .qb-toggle[aria-checked="true"] { border-color: #1a6b5c; }
+
+/* The strip's top edge is the one thing that changes colour: teal means live. */
+body[data-state="paused"] .qb { border-top-color: var(--qb-on); }
+
+/* --- the skill sheet ---------------------------------------------------- */
+
+.qb-sheet {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.qb-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.qb-list {
+  position: relative;
+  max-height: 100%;
+  margin: 0 8px calc(var(--qb-height) + 4px);
+  padding: 4px;
+  overflow-y: auto;
+  border: 1px solid var(--qb-chip-edge);
+  border-radius: 10px;
+  background: #0b0f14;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 3px;
+}
+
+/*
+ * A button clips at its content box, so the row's height is the line box plus
+ * the padding and nothing else: 15 + 12, the 27 it was at 11px + 8px, so the
+ * list is the length it always was. The padding is what gave way, not the row.
+ */
+.qb-option {
+  padding: 6px;
+  padding-bottom: 14px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--qb-chip);
+  color: var(--qb-ink);
+  font: inherit;
+  font-size: 11px;
+  /* line-height: var(--qb-lh); */
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qb-option[aria-selected="true"] { background: #12362f; color: var(--qb-on); }
+
+/* An unfinished skill's colour and pill -- see `SkillStatus` in
+   src/skillOptions.ts. After the selected rule for the reason index.css gives:
+   equal specificity, and the status is the more useful of the two colours.
+   `.qb-select-value` is the chip on the strip, which has room for the colour
+   but not the pill, so quickbarPage.ts sets the attribute there and nothing
+   else. */
+.qb-option[data-status],
+.qb-select-value[data-status] { color: var(--qb-status); }
+
+[data-status="alpha"] {
+  --qb-status: #f5a04a;
+  --qb-status-soft: #4a2a06;
+}
+
+[data-status="beta"] {
+  --qb-status: #5aa9f0;
+  --qb-status-soft: #10304d;
+}
+
+.qb-flag {
+  margin-left: 4px;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: var(--qb-status-soft);
+  color: var(--qb-status);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+/* The heading over a block of options, across both columns of the grid. Ruled
+   off the block above, so the first one needs no rule. */
+.qb-group {
+  grid-column: 1 / -1;
+  padding: 5px 4px 1px;
+  color: var(--qb-accent);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.qb-group:not(:first-child) {
+  margin-top: 3px;
+  border-top: 1px solid var(--qb-chip-edge);
+  padding-top: 6px;
+}

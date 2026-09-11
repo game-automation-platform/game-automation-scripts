@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Tsum Quick Bar</title>
+    <!--
+      The Quick Bar: the settings worth changing between rounds, in the strip the
+      host draws on the screen's bottom edge -- under the log, and under the row
+      of buttons the game keeps along its own bottom, which is what lets it stay
+      up for a whole run.
+
+      That budget is why the strip is 62dp and not more: on a 16:9 phone the band
+      below the game's lowest button is only about 66dp tall. The strip has the
+      whole of it -- the host's status line used to share this edge and take its
+      height out of the strip's, and it now hangs under the overlay bar instead.
+      The number still reaches the page twice over, pushed through `onGapState`
+      and measured off the window on every resize, because a strip that never
+      hears it is not merely mis-sized: it is clipped, and a theme may still set
+      the budget to anything. See `--qb-h` in quickbar.css.
+
+      ## Editing this file
+
+      Every control below is written out by hand, with a `data-key` naming the
+      setting it drives and nothing else. quickbarPage.ts finds them by that
+      attribute, so **moving, regrouping or restyling anything here needs no
+      change to the script** -- add a cell, drop one, swap the two rows over, and
+      the wiring follows. That is the point of the shape: the layout is meant to
+      be iterated on directly, and quickbar.css is the other half of it.
+
+      The strip is a grid of three columns and two rows, the Report button over
+      both rows, and the coin readout. Column one is the skill name over its
+      level and the two bonus chips; column two is the scan stepper over the
+      chain stepper; column three is the preset over the bubble strategy. Every
+      stepper and toggle is exactly as wide as its own text, the first two
+      columns are as wide as their wider row, and the third takes what is left
+      -- it holds the two chips whose value is a word and can use it.
+
+      The rules the script does rely on:
+        * a `data-key` is a SettingKey, and its cell holds either
+          `.qb-stepper` (with `.qb-value` and two `[data-step]` buttons),
+          `.qb-toggle`, or `.qb-select` (with `.qb-select-value`);
+        * a `.qb-select` cell's key must have a list in `qbOptionsFor`
+          (quickbarPage.ts), which is what decides the sheet it opens;
+        * a stepper cell carries `data-min` / `data-max`;
+        * a cell for a setting that is not finished carries `data-status`
+          -- `alpha` or `beta`, and absent means Production -- which must say
+          what that row says in the settings schema (`SettingSpec.status`,
+          src/settings.ts). A channel that does not offer the status hides the
+          cell, so the strip cannot be the way round a row the panel withheld;
+        * `.qb-preset` is one of the two controls that are not a single setting,
+          so it has no `data-key`: it draws the loaded preset's name into
+          `.qb-preset-value` and opens the list of them when tapped;
+        * `.qb-report` is the other, and changes nothing at all: it asks the
+          engine to write an issue report of what is on screen. It is also the
+          one control live while the run is *going*, not only paused -- the
+          script names its rect to the host, which keeps that patch touchable;
+        * a cell with a `data-key` is given `data-when` -- `now` or `nextRound`
+          -- while a round is being played, and the CSS colours it from that;
+        * the readouts are `#baseCoinAvg`, `#finalCoinAvg` and `#roundCount`;
+        * `<body>` carries `data-state`, which is what the CSS reads;
+        * every control is a `<button>` inside `.qb-controls` -- that is what
+          quickbarPage.ts disables while the script is not paused, `.qb-report`
+          excepted, which it disables only while there is no run;
+        * a label carries `data-i18n` naming a `UiText` key (src/strings.d.ts),
+          and quickbarPage.ts fills its text in from the chosen language once the
+          markup is up. The key is spelt out here because HTML cannot name a
+          TypeScript constant; a key with no catalogue entry shows as itself,
+          which is what makes a typo visible rather than blank.
+
+      As index.html, both the stylesheet and the scripts are local files folded
+      into one self-contained dist/quickbar.html at build time. Nothing here may
+      name a CDN: the page is loaded from file:// on a device that is often
+      offline. Pico is deliberately *not* used -- this page is at most 62dp tall
+      and wants none of it.
+    -->
+    <link rel="stylesheet" href="quickbar.css">
+    <!--
+      The language catalogues, shared with the settings page. English first: it
+      is the complete one, so it is what `i18nRegister` keeps as the fallback for
+      anything another language has not translated. A new language is one more
+      line here and one in src/index.html.
+    -->
+    <script src="i18n.js"></script>
+    <script src="uiEn.js"></script>
+    <script src="uiZhTw.js"></script>
+    <!-- What this channel is allowed to offer, and the badge for what it is
+         not; src/releaseStatus.ts. Ahead of the list that reads it. -->
+    <script src="releaseStatus.js"></script>
+    <!-- The Skill Type entries, shared with the settings page; src/skillOptions.ts. -->
+    <script src="skillOptions.js"></script>
+    <!-- The Bubble Strategy entries, shared the same way; src/bubbleOptions.ts. -->
+    <script src="bubbleOptions.js"></script>
+    <!-- The named-configuration store the preset chip switches between, shared
+         with the settings page; src/presets.ts. -->
+    <script src="presets.js"></script>
+    <script src="quickbarPage.js"></script>
+  </head>
+  <!--
+    `data-state` is one of `paused`, `running` or `idle`, set by the host through
+    onGapState(). Only `paused` is interactive -- see quickbar.css -- bar the
+    Report chip, which is live in `running` too. Nothing is ever covered up: the
+    strip is up for a whole run and its job is to be read, so the controls grey
+    out rather than disappearing behind a veil.
+
+    `data-dense` comes off the same push: `true` once the band the host gave the
+    strip is too short for a name stacked over its number. quickbarPage.ts sets
+    it; the rules are under *a short band* in quickbar.css.
+  -->
+  <body data-state="idle" data-dense="false">
+    <div class="qb">
+      <div class="qb-controls">
+
+        <!--
+          The grid: three columns of two rows, filled top row first. The cells
+          are in reading order, so the first three are the top row and the next
+          three the bottom, and swapping two cells is enough to move a control.
+        -->
+        <div class="qb-grid">
+
+          <!-- Top row: the skill name, the scan stepper, and the preset. -->
+
+          <div class="qb-cell" data-key="skillType">
+            <button class="qb-select" type="button" aria-haspopup="listbox" aria-expanded="false">
+              <span class="qb-select-value">&mdash;</span>
+              <svg class="qb-caret" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M6 9.5l6 6 6-6"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="qb-cell" data-key="maxChainsPerScan" data-min="1" data-max="12">
+            <div class="qb-stepper">
+              <button class="qb-step" type="button" data-step="-1">&minus;</button>
+              <span class="qb-readout">
+                <span class="qb-name" data-i18n="qb.scan">Scan</span>
+                <span class="qb-value">&mdash;</span>
+              </span>
+              <button class="qb-step" type="button" data-step="1">+</button>
+            </div>
+          </div>
+
+          <!--
+            The preset chip carries no `data-key`: a preset is not one setting,
+            so it goes to the engine as `applyLiveSettings` rather than through
+            `quickBarApply`, which carries one value at a time. See
+            qbApplyPreset in quickbarPage.ts.
+          -->
+          <div class="qb-cell qb-cell-wide">
+            <button class="qb-select qb-wide qb-preset" type="button"
+                    aria-haspopup="listbox" aria-expanded="false">
+              <span class="qb-readout qb-wide-readout">
+                <span class="qb-name" data-i18n="qb.preset">Preset</span>
+                <span class="qb-wide-value qb-preset-value">&mdash;</span>
+              </span>
+              <svg class="qb-caret" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M6 9.5l6 6 6-6"/>
+              </svg>
+            </button>
+          </div>
+
+          <!--
+            Bottom row: the skill's level and the two bonus items under its
+            name, the chain stepper under the scan stepper, and the bubble
+            strategy under the preset.
+
+            Each bonus chip is its own label: a switch track beside a word
+            spends 39dp saying what the chip's own tint already says. The word
+            is the button's accessible name, so `role="switch"` still reads
+            correctly. It is the strip's own short name (`qb.bonusCoin`,
+            `qb.bonus5to4`) rather than the settings row's, which runs long in
+            some languages and would widen the column under the skill name.
+          -->
+          <div class="qb-cluster">
+            <div class="qb-cell" data-key="skillLevel" data-min="1" data-max="6">
+              <div class="qb-stepper">
+                <button class="qb-step" type="button" data-step="-1">&minus;</button>
+                <span class="qb-readout">
+                  <span class="qb-name" data-i18n="qb.level">Lv</span>
+                  <span class="qb-value">&mdash;</span>
+                </span>
+                <button class="qb-step" type="button" data-step="1">+</button>
+              </div>
+            </div>
+
+            <div class="qb-cell" data-key="bonusCoin">
+              <button class="qb-toggle" type="button" role="switch" aria-checked="false" data-i18n="qb.bonusCoin">+Coin</button>
+            </div>
+
+            <div class="qb-cell" data-key="bonus5to4">
+              <button class="qb-toggle" type="button" role="switch" aria-checked="false" data-i18n="qb.bonus5to4">5&gt;4</button>
+            </div>
+          </div>
+
+          <div class="qb-cell" data-key="maxChain" data-min="3" data-max="15">
+            <div class="qb-stepper">
+              <button class="qb-step" type="button" data-step="-1">&minus;</button>
+              <span class="qb-readout">
+                <span class="qb-name" data-i18n="qb.chain">Chain</span>
+                <span class="qb-value">&mdash;</span>
+              </span>
+              <button class="qb-step" type="button" data-step="1">+</button>
+            </div>
+          </div>
+
+          <!--
+            An ordinary dropdown cell -- `data-key` and a `.qb-select`, like
+            the skill -- whose list is `src/bubbleOptions.ts`, shared with the
+            settings page. It draws each option's *short* name
+            (`BubbleOption.short`): "All Bubbles Mid Chain" is an ellipsis at
+            this width and says nothing. The sheet it opens has the room and
+            uses the full one.
+          -->
+          <div class="qb-cell qb-cell-wide" data-key="bubbleStrategy">
+            <button class="qb-select qb-wide" type="button"
+                    aria-haspopup="listbox" aria-expanded="false">
+              <span class="qb-readout qb-wide-readout">
+                <span class="qb-name" data-i18n="qb.bubble">Bubble</span>
+                <span class="qb-wide-value qb-select-value">&mdash;</span>
+              </span>
+              <svg class="qb-caret" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M6 9.5l6 6 6-6"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!--
+          Report what is on screen. One button over both rows, at the
+          narrowest width its word fits in, because this is the only control
+          here that is not a setting and must not be mistaken for one.
+
+          Like the preset chip it carries no `data-key` -- it changes nothing --
+          and quickbarPage.ts finds it by class. What it writes is the engine's
+          `reportIssue`; see src/report.ts.
+
+          The strip is only touchable while the run is paused -- except here.
+          Pausing presses the game's own Pause button, so a report taken from a
+          paused strip shows the pause menu; this chip is instead named to the
+          host as a hotspot it keeps touchable while the run is going, so a
+          press mid-round catches the live screen. The screens *before* it are
+          copied from the router's trail either way.
+        -->
+        <div class="qb-cell qb-cell-tall">
+          <button class="qb-report" type="button">
+            <svg class="qb-report-glyph" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3.4L1.6 20.6h20.8zM12 10v4.4M12 17.4v.6"/>
+            </svg>
+            <span class="qb-name qb-report-label" data-i18n="qb.report">Report</span>
+          </button>
+        </div>
+      </div>
+
+      <!--
+        Averages over this run only -- a new `Tsum` per start() is what "since
+        the script was last initialized" means. Shown whether or not the script
+        is paused: this half is a readout, not a control.
+
+        A table because that is what the three are: a name against a figure,
+        three times over. The figures share one right edge so their digits line
+        up down the block -- base over final is a comparison, and a comparison
+        wants a column -- and each name is its row's `<th>`, which is what a row
+        heading is. Rows are `.qb-stat`; the last is also `.qb-stat-rounds`,
+        which is how the CSS knows it is a count and not a coin figure.
+      -->
+      <table class="qb-stats">
+        <tbody>
+          <tr class="qb-stat">
+            <th class="qb-stat-label" scope="row" data-i18n="qb.base">Base</th>
+            <td class="qb-stat-value" id="baseCoinAvg">&mdash;</td>
+          </tr>
+          <tr class="qb-stat">
+            <th class="qb-stat-label" scope="row" data-i18n="qb.final">Final</th>
+            <td class="qb-stat-value" id="finalCoinAvg">&mdash;</td>
+          </tr>
+          <tr class="qb-stat qb-stat-rounds">
+            <th class="qb-stat-label" scope="row" data-i18n="qb.rounds">Rounds</th>
+            <td class="qb-stat-value" id="roundCount">0</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!--
+      The skill list is a button and a sheet, not a <select>: this WebView is in
+      a TYPE_APPLICATION_OVERLAY window with no Activity behind it, and
+      Chromium's select popup asks for one before it will open, gets null, and
+      returns without a word. Same reason as index.html.
+
+      Appended to <body> while open so no ancestor can clip it, and it is taller
+      than the strip itself -- the page asks the host to grow the window while it
+      is up, through setQuickBarExpanded().
+    -->
+    <template id="tpl-sheet">
+      <div class="qb-sheet">
+        <div class="qb-scrim"></div>
+        <div class="qb-list" role="listbox" tabindex="-1"></div>
+      </div>
+    </template>
+
+    <template id="tpl-option">
+      <button class="qb-option" type="button" role="option"></button>
+    </template>
+
+    <!-- A heading between blocks of options, for the entries that declare a
+         `group`. A direct child of the list, spanning both of its columns:
+         a wrapper round the options would be one grid cell. -->
+    <template id="tpl-group">
+      <div class="qb-group" role="presentation"></div>
+    </template>
+
+    <!-- The pill on an unfinished skill, appended after its name in the sheet.
+         `data-status` carries which one; quickbar.css colours it from that. -->
+    <template id="tpl-flag">
+      <span class="qb-flag"></span>
+    </template>
+  </body>
+</html>

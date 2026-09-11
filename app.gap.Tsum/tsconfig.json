@@ -1,0 +1,144 @@
+{
+  // The game script has no import/export -- every file shares one global scope.
+  // `outFile` concatenates the files listed below (in this order) into a single
+  // build/index.js, which is what Game Automation Platform loads. settings.ts is
+  // intentionally NOT listed here; it compiles separately via
+  // tsconfig.settings.json into build/settings.js, which the settings UI
+  // (index.html) loads on its own.
+  //
+  // Target is ES2023 because the engine is QuickJS-ng, which implements it.
+  // This was ES5 for Robotmon's Duktape; nothing about the emit got faster when
+  // it was raised (the downlevelled output carried no helpers and almost no
+  // closure churn), so treat this as permission to write modern code rather
+  // than as a performance setting.
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023", "DOM"],
+    "module": "none",
+    "outFile": "./build/index.js",
+    "rootDir": "./src",
+    // The bundle is not read by people -- the sources are. Comments in it only
+    // cost parse time on the device, and tools/minify/minify.js would strip them
+    // on the way into dist/ anyway; taking them out here means build/index.js and
+    // the shipped file differ in one thing only, which is the mangling.
+    "removeComments": true,
+    "newLine": "lf",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmitOnError": false,
+    "ignoreDeprecations": "6.0"
+  },
+  "files": [
+    // Types only, no emit. shared.d.ts is also compiled into the settings UI,
+    // so both sides of the start() bridge agree on the Settings shape.
+    "src/shared.d.ts",
+    "src/globals.d.ts",
+    "src/taskController.ts",
+    // The run's task table, shared with the settings page (tsconfig.settings.json)
+    // so the Run order card and buildRun describe one set of jobs.
+    "src/runPlan.ts",
+    "src/state.ts",
+    "src/utils.ts",
+    "src/data.ts",
+    // The tsum portrait library is deliberately absent: it is `src/tsums.dat`,
+    // deployed beside index.js and read by roundStats.ts on first use. It was
+    // two thirds of this bundle when it was a compiled-in array.
+    // The log event vocabulary: `const enum`s only, so it contributes nothing
+    // to the bundle and its slot here is for reading order -- the names the
+    // catalogue below is keyed by. Also compiled into the settings UI.
+    "src/logEvents.ts",
+    // The emitted event vocabulary, the same shape and for the same reason:
+    // `const enum`s only, nothing in the bundle, slot here for reading order.
+    // Only this compilation -- the settings and Quick Bar pages emit nothing.
+    "src/scriptEvents.ts",
+    // The log sentence registry, then one table per language. The registry
+    // first: each table registers itself into it as the bundle evaluates.
+    // English next, because it is the table the others are typed against and
+    // the one `logStringsFor` fills their gaps from. A new language is one more
+    // file on the end of this run.
+    "src/logs.ts",
+    "src/logsEn.ts",
+    "src/logsZhTw.ts",
+    // The structured logger. Reads `Config.debugLogs` and the message
+    // catalogue above, and every other file logs through it -- but only
+    // from inside a function, so its slot here is for reading order.
+    "src/logging.ts",
+    "src/pathfinding.ts",
+    // The page router constructs its singleton (`gPages`) at load time, so it
+    // has to be evaluated before pageHandlers.ts registers into it -- and after
+    // data.ts, whose `Page`, `PageProfiles` and `NavPlans` tables it reads.
+    "src/pages.ts",
+    // The Tsum object: the class, the capture and touch wrappers, the geometry.
+    // Everything below this line up to fever.ts reopens `Tsum.prototype` and so
+    // has to follow it; among themselves the order is reading order only, since
+    // each file's own contribution is a method or a `const` nothing evaluates at
+    // load time.
+    "src/tsum.ts",
+    "src/waits.ts",
+    "src/appLifecycle.ts",
+    "src/board.ts",
+    "src/play.ts",
+    "src/mail.ts",
+    "src/hearts.ts",
+    "src/levelCap.ts",
+    // Borrows `awaitPage` from levelCap.ts, which is why it follows it.
+    "src/boxes.ts",
+    // Attaches to Tsum.prototype and constructs its singleton (`gFever`) at
+    // load time, so it follows tsum.ts and precedes pageHandlers.ts, whose
+    // observe.feverTime feeds it.
+    "src/fever.ts",
+    // The other mode of the board: the Lorcana transformation. Attaches to
+    // Tsum.prototype, and skillCore.ts calls lorcanaExtraClusterSlots, so it
+    // sits between the two -- though only for reading order, since everything
+    // it exports is a function or a plain object rather than a class.
+    "src/lorcana.ts",
+    // skillCore.ts declares the registry the skill files register into at load
+    // time, so it has to be concatenated ahead of them.
+    "src/skills/skillCore.ts",
+    "src/skills/burst.ts",
+    "src/skills/pairTsum.ts",
+    "src/skills/donald.ts",
+    "src/skills/lukeJ.ts",
+    "src/skills/marie.ts",
+    "src/skills/moana.ts",
+    "src/skills/mickeyH2015.ts",
+    "src/skills/snowWhite.ts",
+    "src/skills/cinderella.ts",
+    "src/skills/woody2.ts",
+    "src/skills/cabbageMickey.ts",
+    "src/skills/cptLy.ts",
+    "src/skills/lightningMcQueenPlus.ts",
+    "src/skills/formalBeast.ts",
+    "src/skills/tiaraMinniePlus.ts",
+    "src/skills/coronationElsa.ts",
+    "src/skills/rapunzelPlus.ts",
+    "src/skills/lorcanaAurora.ts",
+    "src/skills/gaston.ts",
+    "src/clickAssist.ts",
+    "src/dialogs.ts",
+    // Attaches to Tsum.prototype and calls dialogScreenshot (dialogs.ts)
+    // and scorePage (tsum.ts), so it is concatenated after both.
+    "src/corpus.ts",
+    "src/roundStats.ts",
+    // Issue reports. Writes frames the way corpus.ts does and reads the device
+    // tag and the file stamp off roundStats.ts, so it follows both. Nothing
+    // here runs at load time -- the logger calls into it, which is why its slot
+    // being after logging.ts costs nothing.
+    "src/report.ts",
+    // Reads taps through pollTouchDown (clickAssist.ts) and writes frames the
+    // way corpus.ts does, so it follows both.
+    "src/walkthrough.ts",
+    // Called by pageHandlers.ts, so it precedes it; after tsum.ts for reading
+    // order, since the route graph it expands ends where the play loop does.
+    "src/forecast.ts",
+    // Registers into `gPages` as the bundle evaluates, so it comes after every
+    // file whose methods its handlers call -- and before index.ts, which is
+    // what starts anything running.
+    "src/pageHandlers.ts",
+    "src/index.ts",
+    // The engine half of the Quick Bar. Reads `gRunActive` (index.ts) and taps
+    // through `ts`, so it is last; nothing calls into it from the bundle -- the
+    // host's WebView and its pause hook are the only callers.
+    "src/quickbar.ts"
+  ]
+}

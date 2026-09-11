@@ -1,0 +1,69 @@
+{
+  // settings.ts is the configuration UI script. It is loaded directly by
+  // index.html (<script src="settings.js">) and must stay a standalone file --
+  // it is NOT part of the bundled game script (see tsconfig.json). This config
+  // emits build/settings.js on its own, one input -> one output.
+  "compilerOptions": {
+    "target": "ES5",
+    "lib": ["ES5", "DOM"],
+    "module": "none",
+    "outDir": "./build",
+    "rootDir": "./src",
+    // As tsconfig.json: nothing reads build/settings.js, and every byte of it is
+    // inlined into dist/index.html.
+    "removeComments": true,
+    "newLine": "lf",
+    // Not `strict` yet: settings.ts is a direct port of the original
+    // settings.js and still leans on implicit any in its jQuery rendering. The
+    // checks below are the ones it does pass, and they are what catch a
+    // mistyped Settings key -- the failure that actually costs anything here.
+    "strict": false,
+    "noImplicitThis": true,
+    "strictNullChecks": true,
+    "skipLibCheck": true,
+    "noEmitOnError": false,
+    "ignoreDeprecations": "6.0"
+  },
+  "files": [
+    "src/shared.d.ts",
+    // Erased at compile time, so the settings page pays nothing for sharing
+    // the game script's log event names.
+    "src/logEvents.ts",
+    "src/settings.d.ts",
+    // The UI string vocabulary. Erased at compile time, like logEvents.ts, so
+    // the key costs nothing at runtime.
+    "src/strings.d.ts",
+    // The i18n runtime and one catalogue per language, shared with the Quick Bar
+    // page. Each emits its own file under build/, and index.html loads them in
+    // this order -- English first, since it is the fallback. Adding a language
+    // is one line here, one in tsconfig.quickbar.json, and a script tag in each
+    // of the two HTML files.
+    "src/i18n.ts",
+    "src/uiEn.ts",
+    "src/uiZhTw.ts",
+    // What this channel is allowed to offer, and how an unfinished thing is
+    // badged. Shared with the Quick Bar page, and read by both the skill list
+    // and the settings schema. Emits build/releaseStatus.js, loaded first of
+    // the two below it.
+    "src/releaseStatus.ts",
+    // The Skill Type dropdown's entries, shared with the Quick Bar page. Emits
+    // build/skillOptions.js, which index.html loads before settings.js.
+    "src/skillOptions.ts",
+    // The Bubble Strategy dropdown's entries, shared for the same reason and in
+    // the same shape. Emits build/bubbleOptions.js.
+    "src/bubbleOptions.ts",
+    // The run's task table, shared with the game bundle so the Run order card
+    // lists what buildRun registers. Emits build/runPlan.js, loaded before
+    // settings.js.
+    "src/runPlan.ts",
+    // The QR encoder behind the share panel's scannable code. Emits
+    // build/qrCode.js, loaded before settings.js. Not in the Quick Bar's
+    // compilation: nothing there draws one yet.
+    "src/qrCode.ts",
+    // The named-configuration store, shared with the Quick Bar page: both list
+    // presets and both apply one. Emits build/presets.js, loaded before
+    // settings.js.
+    "src/presets.ts",
+    "src/settings.ts"
+  ]
+}

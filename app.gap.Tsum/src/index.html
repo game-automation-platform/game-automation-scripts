@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Tsum settings</title>
+    <!--
+      Both stylesheets and the script are local files, inlined into one
+      self-contained dist/index.html by html-inline-external at build time (see
+      build.sh). Nothing here may reference a CDN: the page is loaded from
+      file:// on a device that is often offline, so an external asset is not a
+      slow asset, it is a missing one.
+
+      pico.css is copied into ./build from node_modules/@picocss/pico by the
+      build script; it is not checked in.
+    -->
+    <link rel="stylesheet" href="pico.css">
+    <link rel="stylesheet" href="index.css">
+    <!--
+      The language catalogues, shared with the Quick Bar page. English first: it
+      is the complete one, so `i18nRegister` keeps it as the fallback for
+      anything another language has not translated, and the picker lists them in
+      this order. Adding a language is one more line here, one in
+      src/quickbar.html, and the file itself in the two page tsconfigs.
+
+      All ahead of settings.js, which reads the registry while it builds its
+      schema at load time.
+    -->
+    <script src="i18n.js"></script>
+    <script src="uiEn.js"></script>
+    <script src="uiZhTw.js"></script>
+    <!-- What this channel is allowed to offer, and the badge for what it is
+         not; src/releaseStatus.ts. Ahead of both lists below, which read it. -->
+    <script src="releaseStatus.js"></script>
+    <!-- The Skill Type entries, shared with the Quick Bar page; see
+         src/skillOptions.ts. Ahead of settings.js, which reads it. -->
+    <script src="skillOptions.js"></script>
+    <!-- The Bubble Strategy entries, shared the same way; src/bubbleOptions.ts. -->
+    <script src="bubbleOptions.js"></script>
+    <!-- The run's task table, shared with the game bundle; see src/runPlan.ts.
+         Ahead of settings.js, whose Run order card reads it. -->
+    <script src="runPlan.js"></script>
+    <!-- The QR encoder the share panel draws its code with; src/qrCode.ts. -->
+    <script src="qrCode.js"></script>
+    <!-- The named-configuration store the app bar's dropdown switches between,
+         shared with the Quick Bar page; see src/presets.ts. -->
+    <script src="presets.js"></script>
+    <script src="settings.js"></script>
+  </head>
+  <body>
+    <header class="app-bar">
+      <span id="version" class="app-title"></span>
+      <!--
+        Presets: which saved configuration the form currently is, and the panel
+        that saves, overwrites or deletes one. Here rather than on a tab because
+        switching between configurations is something you do *to* the settings,
+        not one of them -- the same reason the theme toggle sits here.
+
+        The dropdown's label is not stored anywhere: settings.ts matches the form
+        against every preset on each save, so a value changed by hand afterwards
+        drops it back to "No preset" with nothing to invalidate.
+      -->
+      <button id="presetSelect" class="preset-select" type="button"
+              aria-haspopup="listbox" aria-expanded="false">
+        <span id="presetName" class="preset-name"></span>
+        <svg class="icon preset-caret" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M6 9.5l6 6 6-6"/>
+        </svg>
+      </button>
+      <button id="presetSave" class="preset-save" type="button">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5 4h11l3 3v13H5z"/>
+          <path d="M9 4v5h6V4M8 20v-6h8v6"/>
+        </svg>
+      </button>
+      <button id="themeToggle" class="theme-toggle" type="button" aria-live="polite">
+        <svg class="icon icon-sun" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="4.2"/>
+          <path d="M12 2v2.6M12 19.4V22M2 12h2.6M19.4 12H22M4.9 4.9l1.9 1.9M17.2 17.2l1.9 1.9M19.1 4.9l-1.9 1.9M6.8 17.2l-1.9 1.9"/>
+        </svg>
+        <svg class="icon icon-moon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M20 14.2A8.2 8.2 0 0 1 9.8 4a8.4 8.4 0 1 0 10.2 10.2z"/>
+        </svg>
+      </button>
+    </header>
+
+    <!--
+      The Save panel behind the app bar's save button: one name field and what
+      can be done with it. Static markup rather than a template, because
+      renderPage() clears the tab bar and the panels and this is neither -- it is
+      chrome, like the footer, and survives a language change with its labels
+      rewritten by localiseChrome().
+
+      Sticky under the app bar so it opens where the button was pressed rather
+      than at the top of a page that is scrolled.
+    -->
+    <div id="presetPanel" class="preset-panel" hidden>
+      <input id="presetNameInput" class="preset-input" type="text"
+             spellcheck="false" autocomplete="off" maxlength="40">
+      <div class="preset-actions">
+        <button id="presetSaveNew" class="row-button" type="button"></button>
+        <button id="presetUpdate" class="row-button" type="button"></button>
+        <button id="presetDelete" class="row-button preset-danger" type="button"></button>
+        <button id="presetClose" class="row-button preset-quiet" type="button"></button>
+      </div>
+      <p id="presetStatus" class="preset-status" role="status"></p>
+    </div>
+
+    <nav id="tabBar" class="tab-bar" role="tablist"></nav>
+
+    <main id="tabPanels" class="container"></main>
+
+    <footer class="page-foot container">
+      <p id="restartNowText" class="restart-note" hidden></p>
+      <button id="resetSettings" class="reset-button" type="button" hidden></button>
+    </footer>
+
+    <!--
+      Every piece of page structure lives here as a template, and settings.ts
+      clones one per tab / group / row rather than building HTML strings. Two
+      reasons beyond taste: a setting title goes in as text, so it can never be
+      read as markup, and the layout of a row is editable here without touching
+      the script that fills it.
+
+      The contract between the two halves is the class names below. settings.ts
+      looks rows up by class, never by position, so wrapping or reordering
+      anything inside a template is safe.
+    -->
+
+    <template id="tpl-tab-button">
+      <button class="tab-button" type="button" role="tab"></button>
+    </template>
+
+    <template id="tpl-tab-panel">
+      <section class="tab-panel" role="tabpanel" hidden></section>
+    </template>
+
+    <template id="tpl-group">
+      <article class="group">
+        <h2 class="group-title"></h2>
+        <p class="group-help"></p>
+        <div class="group-rows"></div>
+      </article>
+    </template>
+
+    <template id="tpl-row">
+      <div class="setting-row">
+        <div class="row-label">
+          <span class="row-title"></span>
+          <small class="row-help"></small>
+        </div>
+        <div class="row-control"></div>
+      </div>
+    </template>
+
+    <!-- A row with no control: the build-date line, and any explanatory note. -->
+    <template id="tpl-note">
+      <div class="setting-row setting-note"><div class="note-text"></div></div>
+    </template>
+
+    <!--
+      The Run order card: a whole row that draws itself, rebuilt from the live
+      settings after every change. The <ol> is the schedule, one <li> per job;
+      the flow line under it is one board scan.
+    -->
+    <template id="tpl-run-order">
+      <div class="setting-row run-order">
+        <ol class="run-steps"></ol>
+        <p class="run-note"></p>
+        <p class="run-flow-title"></p>
+        <p class="run-flow"></p>
+      </div>
+    </template>
+
+    <template id="tpl-run-step">
+      <li class="run-step">
+        <span class="run-what"></span>
+        <span class="run-every"></span>
+        <small class="run-detail"></small>
+      </li>
+    </template>
+
+    <template id="tpl-run-chip">
+      <span class="run-chip"></span>
+    </template>
+
+    <template id="tpl-switch">
+      <input class="setting-switch" type="checkbox" role="switch">
+    </template>
+
+    <!--
+      The dropdown is a button and a sheet, not a <select>.
+
+      A native <select> is unusable here: the settings page runs in a WebView
+      inside a TYPE_APPLICATION_OVERLAY window, which belongs to a Service and
+      so has no Activity. Chromium's select popup asks its WindowAndroid for one
+      before it will open, gets null, and returns without a word -- so the row
+      looks live and does nothing at all when tapped. Everything below is built
+      from ordinary elements that need no popup window.
+    -->
+    <template id="tpl-select">
+      <button class="setting-select" type="button" aria-haspopup="listbox" aria-expanded="false">
+        <!-- The name is its own element so it, and not the status pill beside
+             it, is what gets ellipsed when the row runs out of width. -->
+        <span class="select-value"><span class="select-name"></span></span>
+        <svg class="icon select-caret" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M6 9.5l6 6 6-6"/>
+        </svg>
+      </button>
+    </template>
+
+    <!-- Appended to <body> while open, so no ancestor can clip or scroll it. -->
+    <template id="tpl-select-sheet">
+      <div class="select-sheet">
+        <div class="select-scrim"></div>
+        <div class="select-list" role="listbox" tabindex="-1"></div>
+      </div>
+    </template>
+
+    <template id="tpl-select-option">
+      <button class="select-option" type="button" role="option"></button>
+    </template>
+
+    <!-- A heading between blocks of options, for a dropdown whose entries
+         declare a `group`. Not a wrapper: the options stay direct children of
+         the listbox. -->
+    <template id="tpl-select-group">
+      <div class="select-group" role="presentation"></div>
+    </template>
+
+    <!-- The pill on an unfinished option, appended after its name. `data-status`
+         carries which one, and index.css colours it from that. -->
+    <template id="tpl-select-flag">
+      <span class="select-flag"></span>
+    </template>
+
+    <!--
+      A number row. The fine buttons step by 1 and are dropped by settings.ts
+      when the coarse step is already 1; the field itself stays editable, and is
+      clamped to the row's min/max on change.
+    -->
+    <template id="tpl-number">
+      <div class="stepper">
+        <button class="step step-fine" type="button" data-fine="-1"></button>
+        <button class="step step-coarse" type="button" data-coarse="-1"></button>
+        <input class="setting-number" type="number" inputmode="numeric">
+        <button class="step step-coarse" type="button" data-coarse="1"></button>
+        <button class="step step-fine" type="button" data-fine="1"></button>
+      </div>
+    </template>
+
+    <template id="tpl-text">
+      <input class="setting-text" type="text" spellcheck="false" autocomplete="off">
+    </template>
+
+    <template id="tpl-buttons">
+      <div class="row-buttons"></div>
+    </template>
+
+    <template id="tpl-button">
+      <button class="row-button" type="button"></button>
+    </template>
+
+    <!--
+      Built once, under the Export presets row: the text a copy or a file would
+      carry -- one line per preset, its name and its settings code -- and what
+      happened to it. The box is there so the text can be selected by hand when
+      the clipboard is out of reach, which is also what `writeClipboard`'s last
+      resort selects, and why it is a box of its own rather than the share one
+      above.
+
+      No QR: an export is one code per preset, and the encoder behind the share
+      panel stops at 106 characters, which is about one of them.
+    -->
+    <template id="tpl-preset-export">
+      <div class="share-panel preset-export" hidden>
+        <textarea class="share-code preset-export-text" rows="4"
+                  spellcheck="false" autocomplete="off" readonly></textarea>
+        <div class="share-actions">
+          <button class="share-close preset-export-close" type="button"></button>
+        </div>
+        <p class="preset-status" role="status"></p>
+      </div>
+    </template>
+
+    <!--
+      Built once, under the Report row: a line to say what went wrong, the
+      button that writes the report, and what came back. The note is optional
+      and the button works without it -- the screen and the log are the evidence,
+      and a box nobody fills in must not be a step in the way of them.
+    -->
+    <template id="tpl-report">
+      <div class="share-panel report-panel" hidden>
+        <input class="setting-text report-note" type="text" spellcheck="false"
+               autocomplete="off">
+        <div class="share-actions">
+          <button class="share-apply report-save" type="button"></button>
+          <button class="share-close report-close" type="button"></button>
+        </div>
+        <p class="share-status report-status" role="status"></p>
+      </div>
+    </template>
+
+    <!-- Built once, under the Share settings row, the first time it is used. -->
+    <template id="tpl-share">
+      <div class="share-panel" hidden>
+        <textarea class="share-code" rows="3" spellcheck="false" autocomplete="off"></textarea>
+        <div class="share-actions">
+          <button class="share-apply" type="button"></button>
+          <button class="share-close" type="button"></button>
+        </div>
+        <p class="share-status" role="status"></p>
+        <!--
+          The same code as a QR, for a second phone's camera: the one route
+          between two devices that needs no clipboard, no chat app and no
+          typing. Sized and filled by drawShareQr(), and hidden whenever the
+          box does not hold a code.
+        -->
+        <canvas class="share-qr" hidden></canvas>
+      </div>
+    </template>
+  </body>
+</html>

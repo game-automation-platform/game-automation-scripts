@@ -1,0 +1,11 @@
+{
+  "note": "One row per preset in tools/dispatchEval/presets/: the order the jobs first ran in, and every pick the loop made, tick by tick, under a fake clock. Rewritten by `npm run dispatch:update`; a diff here is a behaviour change.",
+  "rows": {
+    "box-first": {"order":["buyBoxesNow","autoUnlockLevel","receiveOneItem","receiveItems","sendHearts","taskPlayGameQuick"],"tickMs":200,"picks":[{"at":0,"ran":"buyBoxesNow"},{"at":60200,"ran":"autoUnlockLevel"},{"at":180400,"ran":"receiveOneItem"},{"at":420600,"ran":"receiveItems"},{"at":480800,"ran":"sendHearts"},{"at":781000,"ran":"taskPlayGameQuick"},{"at":964000,"ran":"taskPlayGameQuick"},{"at":1147000,"ran":"taskPlayGameQuick"}]},
+    "chores-only": {"order":["receiveOneItem","receiveItems","sendHearts"],"tickMs":200,"picks":[{"at":0,"ran":"receiveOneItem"},{"at":240200,"ran":"receiveItems"},{"at":300400,"ran":"sendHearts"}]},
+    "click-assist": {"order":["receiveOneItem","receiveItems","sendHearts","taskClickAssist"],"tickMs":200,"picks":[{"at":0,"ran":"receiveOneItem"},{"at":240200,"ran":"receiveItems"},{"at":300400,"ran":"sendHearts"},{"at":600600,"ran":"taskClickAssist"},{"at":604600,"ran":"taskClickAssist"},{"at":608600,"ran":"taskClickAssist"}]},
+    "default": {"order":["autoUnlockLevel","receiveOneItem","receiveItems","sendHearts","taskPlayGameQuick"],"tickMs":200,"picks":[{"at":0,"ran":"autoUnlockLevel"},{"at":120200,"ran":"receiveOneItem"},{"at":360400,"ran":"receiveItems"},{"at":420600,"ran":"sendHearts"},{"at":720800,"ran":"taskPlayGameQuick"},{"at":903800,"ran":"taskPlayGameQuick"},{"at":1086800,"ran":"taskPlayGameQuick"}]},
+    "unlock-first": {"order":["autoUnlockLevelNow","receiveOneItem","receiveItems","sendHearts","taskPlayGameQuick"],"tickMs":200,"picks":[{"at":0,"ran":"autoUnlockLevelNow","note":"stood aside"},{"at":200,"ran":"receiveOneItem"},{"at":240400,"ran":"autoUnlockLevelNow","note":"stood aside"},{"at":240600,"ran":"receiveItems"},{"at":300800,"ran":"autoUnlockLevelNow"},{"at":421000,"ran":"sendHearts"},{"at":721200,"ran":"taskPlayGameQuick"},{"at":904200,"ran":"taskPlayGameQuick"},{"at":1087200,"ran":"taskPlayGameQuick"}]},
+    "walkthrough": {"order":["taskWalkthrough"],"tickMs":200,"picks":[{"at":0,"ran":"taskWalkthrough"},{"at":2000,"ran":"taskWalkthrough"}]}
+  }
+}
