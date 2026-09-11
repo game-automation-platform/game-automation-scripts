@@ -7,6 +7,15 @@ current. Anything it does not cover is worth adding to it once found.
 These scripts target **Game Automation Platform** (source at `../game-automation-app`),
 and only that. Feel free to perform updates in that folder as needed.
 
+**The development toolkit is a private sibling checkout, not part of this
+tree.** Comments and docs here cite its commands by name — `pages:eval`,
+`chain:bench`, `report:open` and the rest — and none of them is an `npm run`
+script in this package. When a task needs one, look for that checkout beside
+this repository (it carries its own `DEVELOPMENT.md`) and run it from there,
+against this repository's **built** bundle. This tree is public: nothing in it
+may name that repository or describe what it holds beyond "the development
+toolkit"; `DEVELOPMENT.md` § The development toolkit is the extent of it.
+
 **The break with Robotmon is complete.** This package was forked from
 `r2-studio/robotmon-scripts` (`scripts/com.r2studio.Tsum`) and tracked that
 upstream for a while; it no longer does. There is no porting document, no port

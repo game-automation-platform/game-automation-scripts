@@ -52,15 +52,13 @@ long reasoning belong in the design docs (`OBSCURED_BOARD.md`, `LOGGING.md`,
 - **Apache-2.0 license.** `LICENSE` and `NOTICE` at the repo root; the notice
   records the `r2-studio/robotmon-scripts` origin and the inlined Pico CSS, and
   both files ride in the release zip. `package.json` says the same.
-- **The repository is the script and what builds it.** The development tooling
-  -- the page-detection suite and its corpus of game screenshots, the studios,
-  the state view, the benchmarks, the report opener, the clip cutter, the tsum
-  lexicon -- lives in a separate private repository now and runs against this
-  one's build. What stayed under `tools/` is the build, the checks it runs, and
+- **The repository is the script and what builds it.** The development toolkit
+  lives in a separate private repository now and runs against this one's
+  build. What stayed under `tools/` is the build, the checks it runs, and
   `tools/runtime/`, the host shim every harness loads the bundle through. The
   observed page graph moved to `docs/transitions.json`, beside the clip
-  library. `DEVELOPMENT.md` § Development tooling outside this repo says what
-  the `pages:*` and other commands cited in comments refer to.
+  library. `DEVELOPMENT.md` § The development toolkit says what the commands
+  cited in comments refer to.
 - **`declareReadTop` (`tsum.ts`), the host's `setReadTop`.** The floating
   bar's status line hangs under the bar, in the half of the frame page
   detection reads, and on 0.16 it sat across the six pixels the board

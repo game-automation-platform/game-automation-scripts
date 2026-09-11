@@ -653,7 +653,7 @@ and that reply carries only the live rows.
 
 #### Seeing it without a device
 
-The development tools' `quickbar:preview` stages `build/quickbar.preview.html`
+The development toolkit can stage `build/quickbar.preview.html`
 here: the same page, with a stand-in engine behind it that answers the calls
 and pushes `onGapState` the way the host does. Open it in a browser and the
 strip is live, and the query string drives the state (`?state=running`,
@@ -1045,9 +1045,9 @@ What ships is executed before it is packed either way. `--verify bundle`
 evaluates the output under the `tools/runtime/` host shim, running every
 top-level initialiser the device runs, and fails the build if a name the bridge
 needs has gone; `--verify names:onEvent,onLog` is the weaker equivalent for the
-settings script, which cannot be evaluated without a DOM. The detection suite's
-`pages:eval -- --bundle dist/index.js` runs the whole corpus against the shipped
-file.
+settings script, which cannot be evaluated without a DOM. The development
+toolkit's detection regression can be pointed at `dist/index.js` to run against
+the shipped file.
 
 **The game bundle is `strict: true` and clean.** Keep it that way — the point of
 the strictness is that `ts.*`, `this.*`, `Button.*`, `Page.*`, `settings.*` and
@@ -1221,29 +1221,19 @@ Two paths onto a device, and they are not the same thing:
 | Wrong/missing settings-page or Quick Bar text | `uiEn.ts`, then the same key in `uiZhTw.ts`; a *new* string needs a `UiText` member in `strings.d.ts` first |
 | Adding a language | `Locale` in `shared.d.ts` → a `ui` and a `logs` catalogue beside the English ones → the tsconfigs, the build scripts and the two HTML files. `npm run i18n:check` says what is still untranslated |
 | A new log event, or finding where one is defined | `logEvents.ts` — the member first, then `logsEn.ts` if it is user-visible |
-| Somebody has sent in a zip and says it got stuck | What goes *into* one is `report.ts`; a failure that should collect one on its own is one entry in `ReportTriggers` there and nothing at the call site. Opening one is the development tools' `report:open` |
+| Somebody has sent in a zip and says it got stuck | What goes *into* one is `report.ts`; a failure that should collect one on its own is one entry in `ReportTriggers` there and nothing at the call site. Opening one is the development toolkit's job |
 
-## Development tooling outside this repo
+## The development toolkit
 
 This repository holds the script and what builds it. The tooling that was used
-to *develop* it -- and is still used to keep it right -- lives in a separate,
-private repository beside this one, and runs against this repository's build:
+to *develop* it -- and is still used to keep it right -- is the development
+toolkit: a separate, private repository beside this one that runs against this
+repository's build.
 
-- the page-detection suite and its corpus of labelled game screenshots
-  (`pages:eval`, `pages:audit`, `pages:calibrate`, `pages:selftest`,
-  `pages:noise`, `pages:fidelity`, `pages:stats`, `pages:pull`), and the studio
-  for authoring a fingerprint (`pages:studio`, `pages:digest`);
-- Board Studio (`board:studio`), the state view (`state:view`), the chain
-  benchmark (`chain:bench`) and Elsa's coverage model (`elsa:coverage`);
-- the issue-report opener (`report:open`, `report:pull`), the documentation clip
-  cutter (`media:*`) and the Quick Bar preview (`quickbar:preview`);
-- the tsum lexicon that builds `src/tsums.dat` out of the game's own art, and
-  the tooling that extracts that art.
-
-Comments throughout `src/` cite those commands by name -- "`pages:eval` reports
-the claim on the targeted row", "set off the `worst ms` column of `chain:bench`"
--- because they are the measurements behind the numbers. Read such a citation as
-naming that suite; none of them is an `npm run` script here.
+Comments throughout `src/` cite the toolkit's commands by name, because they
+are the measurements behind the numbers. Read any `npm run` command that this
+package's `package.json` does not define as one of the toolkit's; none of them
+runs here.
 
 ## Debugging
 
@@ -1457,12 +1447,10 @@ everything at global scope; a move to a real bundler has to preserve that or
 the loader breaks. The build uses it for `PAGE_DISPATCH.md`, the dispatch
 traces, `live:check` and `--verify bundle`.
 
-Everything that *tests* detection -- the corpus of labelled screenshots, the
-regression run over it, the audit and calibration passes, the studio for
-authoring a fingerprint -- lives in the development-tools repository (see
-[Development tooling outside this repo](#development-tooling-outside-this-repo))
-and runs against this one's build. A fingerprint change is not finished until
-that suite has been run.
+Everything that *tests* detection lives in the
+[development toolkit](#the-development-toolkit) and runs against this one's
+build. A fingerprint change is not finished until the toolkit's detection
+regression has been run.
 
 ### How a match is chosen
 
@@ -1475,8 +1463,8 @@ accepted anyway.
 landmarks wins, and slack only breaks ties between fingerprints of equal length.
 Ranking on slack alone is actively wrong here -- it averages, so a one-probe
 entry that matched by luck outscores a nine-probe entry that matched genuinely.
-`ClosePage` carries exactly one probe by design, and `pages:selftest` catches
-this the moment the rule is relaxed.
+`ClosePage` carries exactly one probe by design, and the development toolkit
+catches this the moment the rule is relaxed.
 
 `gPages.matches` still uses a *different* metric -- per-channel `isSameColor`
 rather than `absColor` against each probe's threshold -- and that divergence is
@@ -1487,8 +1475,9 @@ mail handling. The comment on the function says what to collect before flipping 
 
 `Config.pageMinMargin` can reject a win that is too close to a
 differently-named runner-up. It defaults to 0 (never reject), and should only be
-raised on evidence from `pages:eval`: turning a recognised screen into `Unknown`
-is handled far worse by the navigation band than a mis-identification.
+raised on evidence from the development toolkit's detection regression: turning
+a recognised screen into `Unknown` is handled far worse by the navigation band
+than a mis-identification.
 
 `detect`/`sweep` also take an optional `expect` list, which narrows *which
 entries are scored at all*. It is a filter and nothing else -- scoring, ranking

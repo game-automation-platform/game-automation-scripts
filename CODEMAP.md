@@ -43,9 +43,8 @@ game-automation-scripts/
 
 It runs on **Game Automation Platform** and only that — see
 [External trees](#external-trees) and `CLAUDE.md` for what that means. The
-tooling that *develops* it — the page-detection suite and its corpus, the
-studios, the tsum lexicon, asset extraction — is a separate private repository
-beside this one, `DEVELOPMENT.md` § Development tooling outside this repo.
+tooling that *develops* it is the development toolkit, a separate private
+repository beside this one — `DEVELOPMENT.md` § The development toolkit.
 
 ## Which document answers which question
 
@@ -181,10 +180,8 @@ hundred lines and more.
 
 Everything here runs on the PC, in Node, against the **built** bundle — never on
 the device — and everything here is part of the build or a check the build
-runs. The development tooling beyond that (the detection suite and corpus, the
-studios, the lexicon, asset extraction) is a separate private repository that
-runs against this one's build: `DEVELOPMENT.md` § Development tooling outside
-this repo.
+runs. The development toolkit beyond that is a separate private repository
+that runs against this one's build: `DEVELOPMENT.md` § The development toolkit.
 
 | Directory | What it is | Entry points |
 |:--|:--|:--|
@@ -338,9 +335,8 @@ until it is done, in order. Almost every row fails **silently**: a file the
 bundle never loads, a method the compiler cannot see, a screen no frame ever
 tests, a generated document that is now a lie. `DEVELOPMENT.md` § Where to start
 is the same knowledge indexed by symptom instead. Where "Then run" names a
-`pages:*` command, that is the detection suite in the development tools
-(`DEVELOPMENT.md` § Development tooling outside this repo), run against this
-repo's build.
+`pages:*` command, that is the development toolkit (`DEVELOPMENT.md` § The
+development toolkit), run against this repo's build.
 
 | Adding | Touch, in this order | Then run |
 |:--|:--|:--|
