@@ -40,7 +40,7 @@ long reasoning belong in the design docs (`OBSCURED_BOARD.md`, `LOGGING.md`,
 
 - Two grey or black-and-white tsums on one board -- the Mandalorian beside Oswald, say -- are told apart instead of being chained together and refused.
 - Link MyTsum first finds your tsum's colour on the board again, instead of guessing from the skill button.
-- Round stats no longer leave the base coins blank when the counter ends in 44.
+- Round stats no longer leave the base coins blank when the counter ends in 44, or the round's coins blank when the figure has a 9 in it.
 
 ### Added
 
@@ -103,6 +103,18 @@ long reasoning belong in the design docs (`OBSCURED_BOARD.md`, `LOGGING.md`,
   column at 0 light, where a '0''s thinnest column is core. Nine debug shots
   from the device all read, and one is in the corpus for `pages:stats`.
   `stats.joinedGlyphsCut` records a cut.
+- **`final_coins` was blank for every figure with a 9 in it.** The '9'
+  template closed its loop with two full-width rows where the game draws a
+  thin loop and a hooked tail, so at tally size the glyph led '0' by 0.021,
+  under the 0.03 margin floor, and the field failed every read of the round.
+  Six device shots in a row (2,997 … 4,191) had a 9 and nothing else wrong.
+  `StatsDigits` (`src/roundStats.ts`) is recut whole as the per-pixel
+  majority over 212 labelled glyphs from the corpus and the debug shots, at
+  all three sizes the game draws a number; the worst glyph goes from 0.743 /
+  0.021 to 0.793 / 0.050, no glyph reads wrong, and all fifteen debug shots
+  read. Two of the tallies are in the corpus, and `pages:stats -- --digits`
+  now prints the per-digit margins and the majority templates so the next
+  recut is a paste.
 - **`PAGE_DISPATCH.md` grew headings out of wrapped comments.** The page-docs
   generator took any short `//` line in the `PageName` enum for a group
   header, so the last line of a wrapped note ("waits to be closed.") became a
