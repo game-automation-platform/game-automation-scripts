@@ -275,6 +275,8 @@ Three things about that command that are easy to get wrong:
   `npm run adb` pushes, per `CLAUDE.md`. On MuMu that folder is a **host-shared
   mount, one Windows folder for every instance** — which is the reason for the
   id in the name, and also why `script*.log` there lists every instance's file.
+  Where that folder is on the PC, for MuMu and for the other emulators, is
+  `README.md` § Getting logs, stats and screenshots off the device.
 - **Quote the remote command.** Git Bash on Windows rewrites a bare `/sdcard/…`
   argument into `C:/Program Files/Git/sdcard/…` before `adb` ever sees it, and
   the failure names a path you never typed. The quotes stop that; so does

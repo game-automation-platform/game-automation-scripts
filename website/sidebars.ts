@@ -43,6 +43,7 @@ const sidebars: SidebarsConfig = {
         'guides/lifecycle-hooks',
         'guides/ui-text-and-languages',
         'guides/test-without-a-device',
+        'guides/files-on-the-device',
         'guides/driving-screens',
       ],
     },

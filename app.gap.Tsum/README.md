@@ -322,6 +322,103 @@ be helpful when troubleshooting.
 | Collect unknown screens | Saves any screen the script cannot recognise to `tsum_record/corpus`, so it can be sent in and turned into a fix. Rate-limited and capped per run. |
 | Page history depth | How many recent screens the script remembers (default 20). A picture of the last few is kept in `tsum_record/pageHistory` for a report to send; with "Debug game" on, every remembered screen keeps one. Each is deleted as it drops off the end, so the folder never grows past this number. 0 turns the history off. |
 
+## Getting logs, stats and screenshots off the device
+
+Everything the script writes goes under one folder on the device's shared
+storage, the app's script root:
+
+```
+/sdcard/Download/GameAutomationPlatform/
+```
+
+In a file manager that is **Download ▸ GameAutomationPlatform**. Inside it:
+
+| Where | What |
+|:--|:--|
+| `logs/script-<device id>.log` | The log: one JSON record per line, rotated at 2 MB into `.1.log`, `.2.log` and `.3.log`. The id is the device's own, so one emulator writes one such file — and the same twelve hex digits end every round `id` in the stats. Reading it is [LOGGING.md](LOGGING.md) |
+| `tsum_record/stats_<YYYYMMDD>.csv` | The round statistics, one file per day — *Record round stats* above |
+| `tsum_record/unread-<field>-<stamp>.png` | The score screen a stat could not be read from, kept so an empty column can be explained |
+| `tsum_record/pageHistory/` | The last screens the script visited, numbered and named for what it recognised: `01562_GamePlaying.png`, `01563_unknown.png` |
+| `tsum_record/reports/` | The report folders — one per **Report** press or automatic trigger, the newest eight — [Reporting a problem](#reporting-a-problem) |
+| `reports/` | The zips **Save to device** in Run History writes |
+| `tsum_record/record.txt`, `tsum_record/presets.txt` | The heart tally, and your exported presets |
+| `tsum_record/corpus/`, `tsum_record/walkthrough/` | Unknown screens and walkthrough recordings — only with those [developer options](#developer-options) on |
+| `tmp/` | Scratch: the *Debug game* frames (`…-boardImg.jpg`, `…-detectedHoughCircles.jpg`, `…-hsvImg.jpg`) and what a dialog check left behind. Safe to empty |
+
+Every file name and timestamp is UTC, so a stats file named for today may still
+be yesterday's, or already tomorrow's, by your own clock.
+
+### On MuMu Player 12
+
+There is nothing to pull. MuMu mounts its shared folder *as* the device's
+`Download`, so the whole script root is already a folder on your PC:
+
+```
+C:\Users\<you>\Documents\MuMuSharedFolder\Download\GameAutomationPlatform\
+```
+
+`Documents` is wherever Windows keeps yours — under OneDrive on many PCs — and
+if you moved the shared folder in MuMu's settings, look under that path
+instead. Open the CSVs, the log and the screenshots straight from there; the
+files are live, so a stats file can be opened while the script is playing. A
+screenshot taken with MuMu's own toolbar button lands next door, in
+`MuMuSharedFolder\Screenshots`.
+
+One thing follows from the mount: **every MuMu instance shares that folder.**
+Two instances running at once each write their own log — that is what the
+device id in its name is for — but the stats files, `record.txt` and the
+reports are one set between them.
+
+### On another emulator, or a phone
+
+The folder is the same; what differs is how you reach it. In order of least
+effort:
+
+1. **The emulator's shared folder.** Every desktop emulator has one — a folder
+   on the PC that also appears inside the guest — and copying into it from the
+   guest's file manager (the *Files* app) needs nothing installed. By default:
+   Nox's is `Nox_share` in your user folder (the guest's `/mnt/shared`);
+   BlueStacks 5's is `C:\ProgramData\BlueStacks_nxt\Engine\UserData\SharedFolder`
+   (the guest's `/sdcard/windows/BstSharedFolder`), and its *Media Manager* does
+   the copying; LDPlayer's opens from the *Shared folder* button on its toolbar.
+   Those are from each emulator's own documentation, and its settings say where
+   yours is. For a report, **Save to device** already does this copy where the
+   app recognises the emulator ([Reporting a problem](#reporting-a-problem)).
+
+2. **adb.** Every emulator listens for adb on a local port, and its
+   documentation says which: MuMu 12 on `127.0.0.1:16384` for the first
+   instance, 32 higher for each further one (it ships its own `adb.exe` beside
+   `MuMuManager.exe`, under `nx_main`); Nox on `127.0.0.1:62001`; LDPlayer and
+   BlueStacks 5 on `127.0.0.1:5555` (BlueStacks needs *Android Debug Bridge*
+   turned on under its Advanced settings). Then:
+
+   ```sh
+   adb connect 127.0.0.1:16384
+   adb pull /sdcard/Download/GameAutomationPlatform/tsum_record .
+   adb pull /sdcard/Download/GameAutomationPlatform/logs .
+   ```
+
+   Each `pull` creates the folder inside the target, so those land as
+   `./tsum_record/` and `./logs/`. From Git Bash on Windows, put
+   `MSYS_NO_PATHCONV=1` in front of the command: the shell otherwise rewrites
+   `/sdcard/…` into a path under `C:\Program Files\Git` before adb sees it.
+
+3. **On a phone**, the same folder is under *Download* in the Files app, and
+   over a USB cable it shows up as `Download\GameAutomationPlatform` in
+   Explorer. For a report, **Share report** is the easier route.
+
+**A screenshot of your own** — what is on the screen right now, floating bar
+and all:
+
+```sh
+adb shell screencap -p /sdcard/Download/screen.png
+adb pull /sdcard/Download/screen.png .
+```
+
+On MuMu the first line is enough: the file appears in
+`MuMuSharedFolder\Download\screen.png` as it is written. The screens the
+*script* saw are the `pageHistory/` and report folders above, and *Debug game*
+on the Debug tab keeps one of every screen it visits there.
 
 ## Roadmap
 

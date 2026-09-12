@@ -105,6 +105,8 @@ adb shell "tail -f /sdcard/Download/GameAutomationPlatform/logs/script-<id>.log"
 Use `-f`, not `-F` — the device's `tail` has no `-F`. Quote the remote
 command: Git Bash on Windows rewrites a bare `/sdcard/…` into a Windows path
 before `adb` sees it. The service prints the resolved log path at every start.
+On MuMu the file is already on the PC, in the shared folder —
+[Files on the device](../guides/files-on-the-device).
 
 Columns worth adding: `level`, `component`, `event`, `message`, `roundId`.
 Payload fields need a column of their own (`line.json_content.data.scanCostMs`).

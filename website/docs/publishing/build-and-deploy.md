@@ -52,7 +52,9 @@ the release the app already has rather than beside it. `-Channel` points it at
 another channel's folder.
 
 On an emulator that mounts a shared folder as `/sdcard/Download` (MuMu does),
-copying `dist/` into that folder on the PC is the same thing without adb.
+copying `dist/` into that folder on the PC is the same thing without adb. The
+other direction — the log, the stats and the screenshots back onto the PC — is
+[Files on the device](../guides/files-on-the-device).
 
 <ImagePlaceholder id="app-library-tab" alt="The app's Library tab with the installed script's card, showing its version and the Play action" />
 
