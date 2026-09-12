@@ -53,7 +53,9 @@ long reasoning belong in the design docs (`OBSCURED_BOARD.md`, `LOGGING.md`,
   on the site is fetched from GitHub at view time, `EVENTS.md`,
   `PAGE_DISPATCH.md` and `BACKLOG.md` are synced in at build time, and
   `refs:check` there holds every code reference to the tree. Published to
-  GitHub Pages by `.github/workflows/docs.yml`; `CONTRIBUTING.md` at the root
+  GitHub Pages at https://scripts.gapapp.app/ by `.github/workflows/docs.yml`
+  (the custom domain is served from the root, so `baseUrl` is `/`);
+  `CONTRIBUTING.md` at the root
   is the short form, and `map:check` knows the directory. Screenshots are
   placeholders for now, listed in `website/IMAGES_NEEDED.md`.
 - **`README.md` § Getting logs, stats and screenshots off the device.** What

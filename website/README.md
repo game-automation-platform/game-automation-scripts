@@ -1,7 +1,6 @@
 # Contributor documentation site
 
-The Docusaurus site published at
-https://game-automation-platform.github.io/game-automation-scripts/ by
+The Docusaurus site published at https://scripts.gapapp.app/ by
 `.github/workflows/docs.yml` on every push to `main` that touches it.
 
 ```bash

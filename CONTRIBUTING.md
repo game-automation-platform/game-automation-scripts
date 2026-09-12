@@ -1,11 +1,10 @@
 # Contributing
 
 The contributor guide is a site, built from `website/` and published at
-https://game-automation-platform.github.io/game-automation-scripts/. It
-explains the script to someone who has never seen the code — what it is, how
-it is put together, how to add a skill, a setting, a page or a task, and how
-to ship a build or a script library of your own. Start there; `CODEMAP.md` is
-the index into the tree itself.
+https://scripts.gapapp.app/. It explains the script to someone who has never
+seen the code — what it is, how it is put together, how to add a skill, a
+setting, a page or a task, and how to ship a build or a script library of your
+own. Start there; `CODEMAP.md` is the index into the tree itself.
 
 The short version:
 

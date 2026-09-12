@@ -15,9 +15,9 @@ const config: Config = {
     v4: true,
   },
 
-  // GitHub Pages: https://game-automation-platform.github.io/game-automation-scripts/
-  url: 'https://game-automation-platform.github.io',
-  baseUrl: '/game-automation-scripts/',
+  // GitHub Pages on a custom domain, so the site is served from the root.
+  url: 'https://scripts.gapapp.app',
+  baseUrl: '/',
   organizationName: 'game-automation-platform',
   projectName: 'game-automation-scripts',
   trailingSlash: false,
