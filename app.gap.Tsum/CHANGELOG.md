@@ -58,6 +58,8 @@ long reasoning belong in the design docs (`OBSCURED_BOARD.md`, `LOGGING.md`,
   `CONTRIBUTING.md` at the root
   is the short form, and `map:check` knows the directory. Screenshots are
   placeholders for now, listed in `website/IMAGES_NEEDED.md`.
+- **A root `README.md`.** What the repository is, in a paragraph, and the
+  link to https://scripts.gapapp.app/ for the rest.
 - **`README.md` § Getting logs, stats and screenshots off the device.** What
   the script root holds, file by file; that on MuMu it is already a folder on
   the PC (`Documents\MuMuSharedFolder\Download\…`, shared by every instance);

@@ -17,6 +17,7 @@ script added without being mentioned. Run it after moving anything.
 
 ```
 game-automation-scripts/
+├── README.md              what this repo is, and the link to the contributor site
 ├── CLAUDE.md              rules that override defaults -- read alongside this file
 ├── CODEMAP.md             this file
 ├── CONTRIBUTING.md        the short form of the contributor site, for GitHub's
