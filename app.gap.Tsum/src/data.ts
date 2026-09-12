@@ -1627,12 +1627,18 @@ var Page = {
   },
   // The four-panel layout, probed in the two columns a panel keeps clear
   // whatever it is showing: the margin between its left edge and the tsum icon
-  // (x 240) and the gutter between the icon and the text (x 450). The exp and
+  // (x 216) and the gutter between the icon and the text (x 450). The exp and
   // score numbers move with the tsum's state -- an unowned tsum reads "You
   // don't have this Tsum yet" and has no score row at all -- so the text column
   // is not somewhere a probe can live, however flat it looks on one screenshot.
   // The gaps between panels are no better: they show the dimmed board, which is
   // a different picture every round.
+  //
+  // The margin probe sat at x 240 once, which a wide-eared icon reaches: Bianca
+  // and Stitch in panel 2 both failed it, the panel went unrecognised, and the
+  // tally wait -- which renews itself only on a page it can name -- gave up
+  // with the level-up still standing, so the whole round went to the CSV
+  // blank. x 216 reads the same on all five four-panel frames in the corpus.
   //
   // `drift` in the comments is how far each pixel is from the same coordinate on
   // the five-panel frame, which is what says this list is evidence for *this*
@@ -1652,7 +1658,7 @@ var Page = {
     variant: '5to4-bonus',
     colors: LevelUpDimmedChrome.concat([
       {x: 450, y:  641, r: 57, g: 95, b: 148, match: true, threshold: 40},  // panel 1 gutter, drift 302
-      {x: 240, y:  828, r: 39, g: 69, b: 115, match: true, threshold: 40},  // panel 2 left margin, drift 209
+      {x: 216, y:  864, r: 24, g: 56, b:  99, match: true, threshold: 40},  // panel 2 left margin, drift 153
       {x: 450, y: 1271, r: 56, g: 94, b: 147, match: true, threshold: 40},  // panel 4 gutter, drift 282
       {x: 450, y: 1379, r: 54, g: 92, b: 145, match: true, threshold: 80}   // panel 4 gutter low, drift 255, separation 49
     ]),

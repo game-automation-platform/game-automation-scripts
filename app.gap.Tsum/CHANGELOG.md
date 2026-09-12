@@ -41,6 +41,7 @@ long reasoning belong in the design docs (`OBSCURED_BOARD.md`, `LOGGING.md`,
 - Two grey or black-and-white tsums on one board -- the Mandalorian beside Oswald, say -- are told apart instead of being chained together and refused.
 - Link MyTsum first finds your tsum's colour on the board again, instead of guessing from the skill button.
 - Round stats no longer leave the base coins blank when the counter ends in 44, or the round's coins blank when the figure has a 9 in it.
+- A round whose level-up panel shows a wide-eared tsum second -- Bianca, Stitch -- is recorded again instead of going to the stats file blank.
 
 ### Added
 
@@ -55,6 +56,12 @@ long reasoning belong in the design docs (`OBSCURED_BOARD.md`, `LOGGING.md`,
   GitHub Pages by `.github/workflows/docs.yml`; `CONTRIBUTING.md` at the root
   is the short form, and `map:check` knows the directory. Screenshots are
   placeholders for now, listed in `website/IMAGES_NEEDED.md`.
+- **`README.md` § Getting logs, stats and screenshots off the device.** What
+  the script root holds, file by file; that on MuMu it is already a folder on
+  the PC (`Documents\MuMuSharedFolder\Download\…`, shared by every instance);
+  and the shared-folder and adb routes for other emulators and a phone.
+  `LOGGING.md` and `CODEMAP.md` point there; the site carries it as *Files on
+  the device*.
 
 ### Changed
 
@@ -120,6 +127,21 @@ long reasoning belong in the design docs (`OBSCURED_BOARD.md`, `LOGGING.md`,
   with its tail cut off is a '0'. Two of the tallies are in the corpus, and
   `pages:stats -- --digits` prints the per-digit margins and the templates
   so the next recut is a paste.
+- **`pages:stats` is now a three-part regression gate for the number
+  readers**, so a change to a rectangle, a cutoff or a template fails there
+  rather than on the device: every labelled field reads (116 over 19 frames),
+  every labelled digit reads as itself over both floors (304 glyphs, the
+  tally's bonus and high-score rows included), and every digit has a sample
+  at every size the game draws a number -- a gap is a failure that names the
+  frame to capture. Two level-up frames off the device fill the last two
+  gaps, the dimmed counter's '6' and '8'.
+- **A whole round went to the stats file blank when the second level-up panel
+  held a wide-eared tsum.** `TsumLevelUp5to4Bonus`'s margin probe sat at
+  x 240, where Bianca's and Stitch's ears reach, so the panel went
+  unrecognised and the tally wait -- renewed only on a page it can name --
+  gave up with the panel still standing. Four of the six whole-tally debug
+  shots on the device were this. The probe is at x 216 (`src/data.ts`),
+  which reads the same on all five four-panel frames in the corpus.
 - **`PAGE_DISPATCH.md` grew headings out of wrapped comments.** The page-docs
   generator took any short `//` line in the `PageName` enum for a group
   header, so the last line of a wrapped note ("waits to be closed.") became a
