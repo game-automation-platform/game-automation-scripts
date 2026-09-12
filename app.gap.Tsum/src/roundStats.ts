@@ -76,25 +76,30 @@ const StatsGlyphPoints: Point[] = (function() {
   return pts;
 })();
 
-// Digit shapes, normalised to StatsGlyphW x StatsGlyphH. Each is the per-pixel
-// majority over every labelled glyph in the corpus and the device's unread-*
-// debug shots -- 212 glyphs across the three sizes the game draws a number at:
-// the orange score (~50px), the tally rows (~20px) and the dimmed level-up
-// counter (~17px). Over that set the worst genuine digit scores 0.793 with a
-// 0.050 lead over the runner-up. `pages:stats` is the gate; recut the same way
-// from fresh frames if the game ever changes its typeface.
+// Digit shapes, normalised to StatsGlyphW x StatsGlyphH. What `pages:stats
+// --digits` prints: the per-pixel majority of every glyph the corpus labels --
+// 275 of them, across the three sizes the game draws a number at (the orange
+// score ~50px, the tally rows ~20px, the dimmed level-up counter ~17px), on a
+// 540 emulator and a 1080 phone -- then the one pixel a quarter of its samples
+// disagreed on that a '3' gains a lead by. Over that set the worst genuine
+// digit scores 0.800 with a 0.043 lead over the runner-up, and thirteen device
+// shots the set was not cut from all read. Recut the same way from fresh
+// frames if the game ever changes its typeface.
 //
-// Twice a template was bolder than the game's small glyph, and each time it
-// cost a whole field at tally size, where a stroke is two pixels of this grid
-// rather than three. The old '5' had a three-row top bar where the game draws
-// one, so on the coin row it read as '6'. The old '9' closed its loop with two
-// full-width rows where the game draws a thin loop and a hooked tail, so at
-// 20px it was 0.021 from '0' -- under `StatsMinGlyphMargin` -- and every coin
-// figure with a 9 in it was written blank.
+// Cut from tally-size glyphs as much as score-size ones, because that is where
+// a template goes wrong: a stroke is two pixels of this grid there rather than
+// three, and twice a bolder template cost a whole field. The old '5' had a
+// three-row top bar where the game draws one, so on the coin row it read as
+// '6'. The old '9' closed its loop with two full-width rows where the game
+// draws a thin loop and a hooked tail, so at 20px it was 0.021 from '0' --
+// under `StatsMinGlyphMargin` -- and every coin figure with a 9 in it was
+// written blank. The tally's bonus and high-score rows are in the sample for
+// the same reason: they are the only place the corpus draws a small '6' or
+// '8', and the 1080 phone's halved '8' had read as '3' without them.
 const StatsDigits: {[digit: string]: string[]} = {
   '0': ['...####...',
         '..##..##..',
-        '.##...###.',
+        '.##....##.',
         '.##....##.',
         '###....###',
         '###....###',
@@ -103,9 +108,9 @@ const StatsDigits: {[digit: string]: string[]} = {
         '###....###',
         '###....###',
         '.##....##.',
-        '.##...###.',
+        '.##....##.',
         '..##..##..',
-        '...####...'],
+        '...###....'],
   '1': ['.....#####',
         '..########',
         '##########',
@@ -119,22 +124,22 @@ const StatsDigits: {[digit: string]: string[]} = {
         '.....#####',
         '.....#####',
         '.....#####',
-        '......####'],
-  '2': ['..######..',
-        '.########.',
+        '......###.'],
+  '2': ['...#####..',
+        '.###..###.',
         '.##....###',
-        '###....###',
+        '.##....###',
         '.#.....###',
         '.......###',
         '......###.',
-        '....#####.',
+        '.....####.',
         '...####...',
         '..####....',
-        '.####.....',
         '.###......',
-        '#########.',
+        '.##.......',
+        '###.......',
         '##########'],
-  '3': ['...#####..',
+  '3': ['..######..',
         '.##...###.',
         '.##....##.',
         '.#.....##.',
@@ -142,31 +147,31 @@ const StatsDigits: {[digit: string]: string[]} = {
         '......##..',
         '...####...',
         '......###.',
-        '.......###',
+        '.......##.',
         '.......###',
         '##.....###',
-        '###....##.',
-        '.###..###.',
-        '...###....'],
+        '##.....##.',
+        '.##...###.',
+        '...####...'],
   '4': ['......##..',
         '.....###..',
         '....####..',
         '....####..',
-        '...#####..',
-        '...#..##..',
+        '...##.##..',
+        '..##..##..',
         '..##..##..',
         '.##...##..',
-        '.##...##..',
-        '#########.',
+        '.#....##..',
+        '##...###..',
         '##########',
-        '.########.',
+        '.....####.',
         '......##..',
         '......##..'],
   '5': ['.########.',
-        '#########.',
+        '.########.',
+        '.##.......',
+        '.##.......',
         '###.......',
-        '###.......',
-        '###.###...',
         '#########.',
         '###...###.',
         '.#.....###',
@@ -177,22 +182,22 @@ const StatsDigits: {[digit: string]: string[]} = {
         '.###..###.',
         '..#####...'],
   '6': ['...#####..',
-        '.###..###.',
-        '.##....###',
-        '###.......',
+        '.###...##.',
+        '.##....##.',
+        '.##.......',
         '###.......',
         '########..',
-        '###...###.',
+        '###....##.',
+        '###....##.',
         '###....###',
         '###....###',
-        '###....###',
-        '###....###',
+        '.##....###',
         '.##....##.',
-        '..##..###.',
+        '.###..###.',
         '...####...'],
   '7': ['##########',
         '##########',
-        '.#########',
+        '.......###',
         '.......##.',
         '......###.',
         '......##..',
@@ -201,14 +206,14 @@ const StatsDigits: {[digit: string]: string[]} = {
         '....###...',
         '...###....',
         '...###....',
-        '..###.....',
+        '...##.....',
         '..###.....',
         '..##......'],
   '8': ['...####...',
         '.###..###.',
-        '.###..###.',
-        '.###..###.',
-        '.###..###.',
+        '.##....##.',
+        '.##....##.',
+        '.##....##.',
         '.###..###.',
         '..######..',
         '.###..###.',
@@ -216,22 +221,22 @@ const StatsDigits: {[digit: string]: string[]} = {
         '###....###',
         '###....###',
         '###....###',
-        '.###..###.',
-        '...#####..'],
-  '9': ['...####...',
         '.###...##.',
+        '...#####..'],
+  '9': ['..######..',
+        '.###..###.',
         '.##....##.',
-        '.##....##.',
-        '###....##.',
+        '###....###',
+        '###....###',
+        '###....###',
         '###....###',
         '.##....###',
-        '.###...###',
         '..####.###',
-        '.......##.',
+        '.......###',
         '.......##.',
         '.##....##.',
         '.##...###.',
-        '...####...']
+        '..#####...']
 };
 
 // Width over height of each digit as the game draws it. Squashing every glyph
@@ -351,7 +356,7 @@ const StatsDigitMaxWidth = 0.9;
 
 // A glyph has to match its best template this well, and beat the runner-up by
 // this much, for the field to be accepted. The worst genuine digit over the
-// 212 glyphs the templates were cut from scores 0.793 with a 0.050 lead.
+// 275 glyphs the templates were cut from scores 0.800 with a 0.043 lead.
 const StatsMinGlyphScore = 0.72;
 const StatsMinGlyphMargin = 0.03;
 
@@ -806,11 +811,20 @@ Tsum.prototype.readStatsNumbers = function(region) {
     }
     // One box per glyph: separators and speckle out, and a contour the mask
     // joined across two glyphs cut back into them.
+    const cropH = getImageSize(mask).height;
     const glyphs: ContourBox[] = [];
     for (let i = 0; i < boxes.length; i++) {
       const box = boxes[i];
       if (box.height < tallest * StatsSeparatorHeight || box.width < 2) {
         continue;  // thousands separator, or speckle the mask let through
+      }
+      // Every rectangle is padded above and below the row it is aimed at, so
+      // a glyph on the crop's edge is a row the rectangle is not for -- the
+      // other layout's coin row, the exp row above the medals one. The cut
+      // stroke can still look like a digit: a '9' with its tail off is a '0'.
+      if (box.y === 0 || box.y + box.height >= cropH) {
+        logDebug(Log.Stats.ClippedGlyph, { region: region.name, x: box.x, y: box.y, height: box.height, cropHeight: cropH });
+        return null;
       }
       const parts = statsSplitJoined(img, region, box, tallest);
       for (let j = 0; j < parts.length; j++) {

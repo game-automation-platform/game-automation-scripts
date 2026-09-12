@@ -109,12 +109,17 @@ long reasoning belong in the design docs (`OBSCURED_BOARD.md`, `LOGGING.md`,
   under the 0.03 margin floor, and the field failed every read of the round.
   Six device shots in a row (2,997 … 4,191) had a 9 and nothing else wrong.
   `StatsDigits` (`src/roundStats.ts`) is recut whole as the per-pixel
-  majority over 212 labelled glyphs from the corpus and the debug shots, at
-  all three sizes the game draws a number; the worst glyph goes from 0.743 /
-  0.021 to 0.793 / 0.050, no glyph reads wrong, and all fifteen debug shots
-  read. Two of the tallies are in the corpus, and `pages:stats -- --digits`
-  now prints the per-digit margins and the majority templates so the next
-  recut is a paste.
+  majority over 275 labelled glyphs at all three sizes the game draws a
+  number, on both a 540 emulator and a 1080 phone -- the tally's bonus and
+  high-score rows included, since they are the corpus's only small '6' and
+  '8', and a first cut without them turned the phone's '8' into a '3'. The
+  worst glyph goes from 0.743 / 0.021 to 0.800 / 0.043, no glyph reads
+  wrong, and thirteen device shots the set was not cut from all read. A
+  glyph on the crop's top or bottom edge now fails the read outright
+  (`stats.clippedGlyph`): it is a row the rectangle is not for, and a '9'
+  with its tail cut off is a '0'. Two of the tallies are in the corpus, and
+  `pages:stats -- --digits` prints the per-digit margins and the templates
+  so the next recut is a paste.
 - **`PAGE_DISPATCH.md` grew headings out of wrapped comments.** The page-docs
   generator took any short `//` line in the `PageName` enum for a group
   header, so the last line of a wrapped note ("waits to be closed.") became a

@@ -309,6 +309,7 @@ namespace Log {
 
   /** The per-round CSV. */
   export const enum Stats {
+    ClippedGlyph    = 'stats.clippedGlyph',
     CoinCounter     = 'stats.coinCounter',
     DeviceIdUnsaved = 'stats.deviceIdUnsaved',
     JoinedGlyphsCut = 'stats.joinedGlyphsCut',
